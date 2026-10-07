@@ -1,0 +1,64 @@
+{
+  "issues": [
+    {
+      "id": "1",
+      "title": "Water Leakage in Lab 302",
+      "category": "Plumbing",
+      "location": "Academic Block B - 3rd Floor",
+      "priority": "High",
+      "status": "In Progress",
+      "reporter": "Aarav Shah",
+      "description": "Continuous water dripping near the AC pipeline causing ceiling dampness and risk of short circuit."
+    },
+    {
+      "id": "2",
+      "title": "Projector HDMI Port Damaged",
+      "category": "Electronics",
+      "location": "Seminar Hall A",
+      "priority": "Medium",
+      "status": "Reported",
+      "reporter": "Priya Sharma",
+      "description": "The main projector display flickers intermittently due to a loose HDMI input connector."
+    },
+    {
+      "id": "3",
+      "title": "Broken Desk in Classroom 104",
+      "category": "Furniture",
+      "location": "Main Building - Ground Floor",
+      "priority": "Low",
+      "status": "Resolved",
+      "reporter": "Rohan Verma",
+      "description": "Desktop wood panel came off on desk row 3, bench number 4."
+    },
+    {
+      "id": "4",
+      "title": "Wi-Fi Access Point Offline",
+      "category": "Network",
+      "location": "Central Library - 2nd Floor",
+      "priority": "High",
+      "status": "Reported",
+      "reporter": "Ananya Patel",
+      "description": "No internet connection available near the quiet study zone since morning."
+    },
+    {
+      "id": "5",
+      "title": "Elevator B Door Sensor Fault",
+      "category": "Electrical",
+      "location": "Engineering Block",
+      "priority": "High",
+      "status": "In Progress",
+      "reporter": "Karan Malhotra",
+      "description": "Elevator doors close abruptly without sensing obstruction."
+    },
+    {
+      "id": "6",
+      "title": "Gym Equipment Handle Broken",
+      "category": "Facilities",
+      "location": "Sports Complex",
+      "priority": "Low",
+      "status": "Resolved",
+      "reporter": "Neha Gupta",
+      "description": "Cable crossover machine right handle grip is damaged."
+    }
+  ]
+}
