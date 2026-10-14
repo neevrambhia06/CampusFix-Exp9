@@ -11,8 +11,7 @@ import {
   Wrench,
   ShieldCheck,
   Lock,
-  LogOut,
-  Globe
+  LogOut
 } from 'lucide-react';
 
 export function Sidebar(props) {
@@ -30,7 +29,6 @@ export function Sidebar(props) {
   ];
 
   const managementNavItems = [
-    { path: '/', label: 'Home Landing', icon: Globe },
     { path: '/analytics', label: 'Issue Analytics', icon: BarChart3 },
     { path: '/maintenance-team', label: 'Maintenance Team', icon: Wrench },
   ];
@@ -38,12 +36,7 @@ export function Sidebar(props) {
   return (
     <aside className="app-sidebar">
       {/* Brand Logo Header */}
-      <div 
-        className="sidebar-brand" 
-        onClick={() => navigate('/')} 
-        style={{ cursor: 'pointer' }}
-        title="Go to Home Landing Page"
-      >
+      <div className="sidebar-brand">
         <div className="brand-logo-icon">
           <ShieldCheck size={20} className="brand-icon-svg" />
         </div>
