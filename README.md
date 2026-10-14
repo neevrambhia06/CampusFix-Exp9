@@ -10,7 +10,7 @@
 | :--- | :--- | :--- |
 | **"Where is the Spring Boot Backend Entry Point?"** | `backend/src/main/java/com/campusfix/CampusFixApplication.java` | Main class with `@SpringBootApplication` that boots Spring Boot and embedded Tomcat server on port 8080. |
 | **"Where are your REST API endpoints defined?"** | `backend/src/main/java/com/campusfix/controller/IssueController.java` | `@RestController` handling `GET /api/issues`, `POST /api/issues`, `PUT /api/issues/{id}`, `DELETE /api/issues/{id}`, `GET /api/health`. |
-| **"Where is the Admin Login authentication endpoint?"** | `backend/src/main/java/com/campusfix/controller/AuthController.java` | `@PostMapping("/api/auth/login")` validating `admin` / `admin` and returning a signed session token. |
+| **"Where is the Login authentication endpoint?"** | `backend/src/main/java/com/campusfix/controller/AuthController.java` | `@PostMapping("/api/auth/login")` validating multi-role logins (`admin`, `student`, `faculty`, `technician`) and returning a role-based session token. |
 | **"Where is the Database Entity / Table Schema?"** | `backend/src/main/java/com/campusfix/model/Issue.java` | `@Entity` mapped to `@Table(name = "issues")` with `@Id`, `@GeneratedValue`, columns for title, category, priority, status, reporter. |
 | **"Where are the Database Queries / ORM?"** | `backend/src/main/java/com/campusfix/repository/IssueRepository.java` | Interface extending `JpaRepository<Issue, Long>` providing zero-boilerplate SQL CRUD (`findAll`, `save`, `findById`, `deleteById`). |
 | **"Where is the Business Logic?"** | `backend/src/main/java/com/campusfix/service/IssueService.java` | `@Service` layer performing validation, updating fields, and communicating with `IssueRepository`. |
@@ -21,7 +21,7 @@
 | **"Where does React call the Backend API?"** | `frontend/src/services/issueService.js` | Uses modern `fetch()` with `import.meta.env.VITE_API_URL` fallback, sending GET, POST, PUT, PATCH, DELETE requests. |
 | **"Where is Global React State managed?"** | `frontend/src/context/CampusFixContext.jsx` | React Context API (`CampusFixProvider` & `useCampusFix`) storing `issues`, `currentUser`, `isAdmin`, `stats`, `login()`, `logout()`. |
 | **"Where are the React Routes defined?"** | `frontend/src/App.jsx` | `react-router-dom` `<Routes>` mapping `/dashboard`, `/issues`, `/report`, `/admin`, `/login`. |
-| **"Where is the Admin Login UI?"** | `frontend/src/pages/AdminLogin.jsx` | Login form with `admin` / `admin` quick-fill demo button, form validation, and redirect. |
+| **"Where is the Universal Login Portal UI?"** | `frontend/src/pages/AdminLogin.jsx` | Fixora Campus Portal with segmented role selector (`Admin`, `Student`, `Faculty`, `Technician`), 1-click instant demo logins, password toggle, and smart redirection. |
 | **"Where is the Admin Dashboard UI?"** | `frontend/src/pages/AdminDashboard.jsx` | Super Admin control center with live KPI metric cards, interactive status changers (`Reported` ➔ `In Progress` ➔ `Resolved`), and ticket deletion. |
 | **"Where is the Layout & Navigation?"** | `frontend/src/components/layout/` | Modular layout: `Sidebar.jsx`, `TopBar.jsx`, `AppShell.jsx`, `MobileNav.jsx`. |
 
