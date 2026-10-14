@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { Search, Bell, CheckCircle2, AlertCircle, Info, User } from 'lucide-react';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { Search, Bell, CheckCircle2, AlertCircle, Info, ShieldCheck, Lock, LogOut } from 'lucide-react';
 
 export function TopBar(props) {
-  const { user, dataSource, onToggleDataSource, searchTerm, onSearchChange } = props;
+  const { user, isAdmin, onLogout, dataSource, onToggleDataSource, searchTerm, onSearchChange } = props;
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -21,6 +22,8 @@ export function TopBar(props) {
     if (path === '/help') return 'Help & Support Desk';
     if (path === '/analytics') return 'Issue Distribution Analytics';
     if (path === '/maintenance-team') return 'Maintenance Personnel Roster';
+    if (path === '/admin') return 'Administrator Control Center';
+    if (path === '/login') return 'Admin Portal Login';
     return 'CampusFix Workspace';
   };
 
@@ -78,10 +81,10 @@ export function TopBar(props) {
         <button
           onClick={onToggleDataSource}
           className={`datasource-badge ${dataSource === 'api' ? 'api-mode' : 'mock-mode'}`}
-          title="Click to toggle between JSON Server REST API and static mockData.js"
+          title="Click to toggle between Spring Boot REST API and static mockData.js"
         >
           <span className="dot"></span>
-          <span>{dataSource === 'api' ? 'JSON Server API' : 'Mock Data'}</span>
+          <span>{dataSource === 'api' ? 'Spring Boot API' : 'Mock Data'}</span>
         </button>
 
         {/* Notification Bell Icon & Dropdown */}
@@ -131,13 +134,19 @@ export function TopBar(props) {
               setShowNotifications(false);
             }}
             className="topbar-user-pill"
+            style={{
+              borderColor: isAdmin ? 'var(--primary)' : undefined,
+              backgroundColor: isAdmin ? 'var(--primary-light)' : undefined
+            }}
           >
-            <div className="user-avatar-small">
+            <div className="user-avatar-small" style={{ backgroundColor: isAdmin ? 'var(--primary)' : undefined, color: isAdmin ? '#fff' : undefined }}>
               {user ? user.avatar || user.name.charAt(0) : 'A'}
             </div>
             <div className="user-pill-info">
               <span className="pill-name">{user ? user.name : 'Aarav Shah'}</span>
-              <span className="pill-role">{user ? user.role : 'Student'}</span>
+              <span className="pill-role" style={{ color: isAdmin ? 'var(--primary)' : undefined, fontWeight: isAdmin ? 700 : undefined }}>
+                {user ? user.role : 'Student'}
+              </span>
             </div>
           </div>
 
@@ -148,9 +157,58 @@ export function TopBar(props) {
                 <div className="user-display-role">{user ? user.email || 'aarav.shah@campus.edu' : ''}</div>
               </div>
               <ul className="profile-menu-links">
-                <li><Link to="/my-reports" onClick={() => setShowProfileMenu(false)}>My Reports & Tickets</Link></li>
-                <li><Link to="/report" onClick={() => setShowProfileMenu(false)}>Report New Issue</Link></li>
-                <li><Link to="/help" onClick={() => setShowProfileMenu(false)}>Help & Support</Link></li>
+                {isAdmin ? (
+                  <>
+                    <li>
+                      <Link to="/admin" onClick={() => setShowProfileMenu(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 600 }}>
+                        <ShieldCheck size={16} />
+                        <span>Admin Dashboard</span>
+                      </Link>
+                    </li>
+                    <li><Link to="/issues" onClick={() => setShowProfileMenu(false)}>View All Issues</Link></li>
+                    <li><Link to="/analytics" onClick={() => setShowProfileMenu(false)}>System Analytics</Link></li>
+                    <li style={{ borderTop: '1px solid var(--border-light)', marginTop: '4px', paddingTop: '4px' }}>
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          if (onLogout) onLogout();
+                          navigate('/dashboard');
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#DC2626',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          width: '100%',
+                          padding: '0.5rem 0',
+                          cursor: 'pointer',
+                          fontSize: '0.85rem'
+                        }}
+                      >
+                        <LogOut size={16} />
+                        <span>Log Out of Admin</span>
+                      </button>
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li><Link to="/my-reports" onClick={() => setShowProfileMenu(false)}>My Reports & Tickets</Link></li>
+                    <li><Link to="/report" onClick={() => setShowProfileMenu(false)}>Report New Issue</Link></li>
+                    <li><Link to="/help" onClick={() => setShowProfileMenu(false)}>Help & Support</Link></li>
+                    <li style={{ borderTop: '1px solid var(--border-light)', marginTop: '4px', paddingTop: '4px' }}>
+                      <Link 
+                        to="/login" 
+                        onClick={() => setShowProfileMenu(false)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 600 }}
+                      >
+                        <Lock size={16} />
+                        <span>Admin Login</span>
+                      </Link>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           )}

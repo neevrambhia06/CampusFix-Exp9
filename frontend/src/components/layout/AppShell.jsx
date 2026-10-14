@@ -2,7 +2,7 @@ import React from 'react';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import MobileNav from './MobileNav';
-import { user } from '../../data/mockData';
+import { useCampusFix } from '../../context/CampusFixContext';
 
 export function AppShell(props) {
   const { 
@@ -13,16 +13,21 @@ export function AppShell(props) {
     onSearchChange 
   } = props;
 
+  const { currentUser, isAdmin, logout } = useCampusFix();
+  const activeUser = currentUser || { name: 'Aarav Shah', role: 'Student' };
+
   return (
     <div className="app-shell">
       {/* Desktop Fixed Left Sidebar */}
-      <Sidebar user={user} />
+      <Sidebar user={activeUser} isAdmin={isAdmin} onLogout={logout} />
 
       {/* Main Content Area */}
       <div className="app-main-wrapper">
         {/* Sticky Top Header Bar */}
         <TopBar 
-          user={user} 
+          user={activeUser} 
+          isAdmin={isAdmin}
+          onLogout={logout}
           dataSource={dataSource}
           onToggleDataSource={onToggleDataSource}
           searchTerm={searchTerm}
@@ -41,7 +46,7 @@ export function AppShell(props) {
               <strong>CampusFix</strong> — Smart Campus Issue Reporting & Maintenance System
             </div>
             <div className="footer-right">
-              Logged in as <strong>{user.name}</strong> ({user.role}) · WMD Mini Project 2026
+              Active Session: <strong>{activeUser.name}</strong> ({activeUser.role}) · WMD Exp 9
             </div>
           </div>
         </footer>

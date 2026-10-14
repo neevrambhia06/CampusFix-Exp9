@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   ListFilter, 
@@ -9,12 +9,15 @@ import {
   HelpCircle, 
   BarChart3, 
   Wrench,
-  ShieldCheck
+  ShieldCheck,
+  Lock,
+  LogOut
 } from 'lucide-react';
 
 export function Sidebar(props) {
-  const { user } = props;
+  const { user, isAdmin, onLogout } = props;
   const location = useLocation();
+  const navigate = useNavigate();
 
   const mainNavItems = [
     { path: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -39,7 +42,7 @@ export function Sidebar(props) {
         </div>
         <div className="brand-text">
           <div className="brand-name">
-            CampusFix <span className="brand-badge">PRO</span>
+            CampusFix <span className="brand-badge">{isAdmin ? 'ADMIN' : 'PRO'}</span>
           </div>
           <p className="brand-tagline">Report it. Track it. Fix it.</p>
         </div>
@@ -47,6 +50,31 @@ export function Sidebar(props) {
 
       {/* Main Navigation List */}
       <nav className="sidebar-nav">
+        {/* Admin Special Highlight Link */}
+        {isAdmin && (
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div className="nav-section-label" style={{ color: 'var(--primary)', fontWeight: 700 }}>
+              ADMINISTRATION
+            </div>
+            <ul className="nav-list">
+              <li>
+                <NavLink
+                  to="/admin"
+                  className={`nav-link ${location.pathname === '/admin' ? 'active' : ''}`}
+                  style={{
+                    backgroundColor: location.pathname === '/admin' ? 'var(--primary)' : 'var(--primary-light)',
+                    color: location.pathname === '/admin' ? '#fff' : 'var(--primary)',
+                    fontWeight: 600,
+                  }}
+                >
+                  <ShieldCheck size={18} className="nav-icon" />
+                  <span>Admin Dashboard</span>
+                </NavLink>
+              </li>
+            </ul>
+          </div>
+        )}
+
         <div className="nav-section-label">MENU</div>
         <ul className="nav-list">
           {mainNavItems.map((item) => {
@@ -87,18 +115,71 @@ export function Sidebar(props) {
               </li>
             );
           })}
+
+          {/* Admin Portal Gateway / Login */}
+          <li>
+            <NavLink
+              to={isAdmin ? '/admin' : '/login'}
+              className={`nav-link ${location.pathname === '/login' || location.pathname === '/admin' ? 'active' : ''}`}
+              style={{
+                marginTop: '0.25rem',
+                border: '1px dashed var(--border-light)',
+                borderRadius: 'var(--radius-sm)'
+              }}
+            >
+              {isAdmin ? (
+                <>
+                  <ShieldCheck size={18} className="nav-icon" style={{ color: 'var(--primary)' }} />
+                  <span>Admin Control</span>
+                </>
+              ) : (
+                <>
+                  <Lock size={18} className="nav-icon" style={{ color: 'var(--accent-amber)' }} />
+                  <span>Admin Login</span>
+                </>
+              )}
+            </NavLink>
+          </li>
         </ul>
       </nav>
 
       {/* Sidebar Footer User Profile */}
-      <div className="sidebar-user-footer">
-        <div className="user-avatar-circle">
-          {user ? user.avatar || user.name.charAt(0) : 'A'}
+      <div className="sidebar-user-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+          <div className="user-avatar-circle" style={{ backgroundColor: isAdmin ? 'var(--primary)' : undefined, color: isAdmin ? '#fff' : undefined }}>
+            {user ? (user.avatar || user.name.charAt(0)) : 'A'}
+          </div>
+          <div className="user-details" style={{ minWidth: 0 }}>
+            <div className="user-display-name" style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+              {user ? user.name : 'Aarav Shah'}
+            </div>
+            <div className="user-display-role" style={{ color: isAdmin ? 'var(--primary)' : undefined, fontWeight: isAdmin ? 600 : undefined }}>
+              {user ? user.role : 'Student'}
+            </div>
+          </div>
         </div>
-        <div className="user-details">
-          <div className="user-display-name">{user ? user.name : 'Aarav Shah'}</div>
-          <div className="user-display-role">{user ? user.role : 'Student'}</div>
-        </div>
+
+        {isAdmin && (
+          <button
+            onClick={() => {
+              if (onLogout) onLogout();
+              navigate('/dashboard');
+            }}
+            title="Log out of Admin"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-muted)',
+              padding: '6px',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <LogOut size={16} />
+          </button>
+        )}
       </div>
     </aside>
   );

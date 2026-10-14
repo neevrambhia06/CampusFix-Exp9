@@ -6,7 +6,8 @@ import {
   createIssue, 
   updateIssue, 
   patchIssue, 
-  deleteIssue 
+  deleteIssue,
+  loginAdmin
 } from '../services/issueService';
 
 // 1. Create Context
@@ -16,7 +17,14 @@ export const CampusFixContext = createContext(null);
 export function CampusFixProvider({ children }) {
   // Application Data & Auth State
   const [issues, setIssues] = useState([]);
-  const [currentUser, setCurrentUser] = useState(initialUser);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('campusfix_user');
+      return saved ? JSON.parse(saved) : initialUser;
+    } catch {
+      return initialUser;
+    }
+  });
   const [selectedIssue, setSelectedIssue] = useState(null);
   
   // Search & Filter State
@@ -29,6 +37,27 @@ export function CampusFixProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dataSource, setDataSource] = useState('api'); // 'api' or 'mock'
+
+  // Admin status helper
+  const isAdmin = useMemo(() => currentUser?.role === 'Admin', [currentUser]);
+
+  // Auth actions
+  const login = async (username, password) => {
+    const res = await loginAdmin(username, password);
+    if (res && res.user) {
+      setCurrentUser(res.user);
+      localStorage.setItem('campusfix_user', JSON.stringify(res.user));
+      if (res.token) localStorage.setItem('campusfix_token', res.token);
+      return res.user;
+    }
+    throw new Error('Login failed: invalid response from server');
+  };
+
+  const logout = () => {
+    setCurrentUser(initialUser);
+    localStorage.removeItem('campusfix_user');
+    localStorage.removeItem('campusfix_token');
+  };
 
   // Load Issues Action (GET /issues)
   const loadIssues = async () => {
@@ -201,6 +230,7 @@ export function CampusFixProvider({ children }) {
     filteredIssues,
     currentUser,
     setCurrentUser,
+    isAdmin,
     selectedIssue,
     setSelectedIssue,
     searchTerm,
@@ -213,6 +243,8 @@ export function CampusFixProvider({ children }) {
     stats,
 
     // Actions & Setters
+    login,
+    logout,
     loadIssues,
     addIssue,
     updateIssue: handleUpdateIssue,

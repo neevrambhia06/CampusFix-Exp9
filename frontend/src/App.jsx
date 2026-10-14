@@ -14,6 +14,8 @@ import Announcements from './pages/Announcements';
 import Help from './pages/Help';
 import Analytics from './pages/Analytics';
 import MaintenanceTeam from './pages/MaintenanceTeam';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 
 import './index.css';
 
@@ -73,6 +75,11 @@ function AppContent() {
           {/* Optional Roster Route */}
           <Route path="/maintenance-team" element={<MaintenanceTeam />} />
 
+          {/* Admin Routes */}
+          <Route path="/login" element={<AdminLogin />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+
           {/* Fallback 404 */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
@@ -90,4 +97,3 @@ export function App() {
 }
 
 export default App;
-

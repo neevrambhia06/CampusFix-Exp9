@@ -1,5 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 const BASE_URL = `${API_BASE.replace(/\/$/, '')}/issues`;
+const AUTH_URL = `${API_BASE.replace(/\/$/, '')}/auth/login`;
 
 export async function getIssues() {
   const response = await fetch(BASE_URL);
@@ -67,4 +68,40 @@ export async function deleteIssue(id) {
     throw new Error(`Failed to delete issue: ${response.statusText}`);
   }
   return await response.json();
+}
+
+export async function loginAdmin(username, password) {
+  try {
+    const response = await fetch(AUTH_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+    });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (err) {
+    console.warn('Backend auth unreachable, falling back to local verification:', err.message);
+  }
+
+  // Fallback client validation
+  if (username === 'admin' && password === 'admin') {
+    return {
+      success: true,
+      user: {
+        id: 'ADM-2026-01',
+        name: 'Campus Administrator',
+        username: 'admin',
+        role: 'Admin',
+        department: 'Campus Operations Directorate',
+        email: 'admin@campusfix.edu',
+        avatar: '🛡️',
+      },
+      token: `adm_local_${Date.now()}`,
+    };
+  }
+
+  throw new Error('Invalid username or password. Please use admin / admin');
 }
