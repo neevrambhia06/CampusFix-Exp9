@@ -16,9 +16,12 @@ import {
   Sparkles,
   CheckCircle2,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Hash
 } from 'lucide-react';
 import { useCampusFix } from '../context/CampusFixContext';
+import { GoogleAuthModal, GoogleIcon } from '../components/reactbits/GoogleAuthModal';
+import { CodeSlots } from '../components/reactbits/CodeSlots';
 
 // Define the 4 core campus roles
 const CAMPUS_ROLES = [
@@ -32,6 +35,7 @@ const CAMPUS_ROLES = [
     border: '#B2D8D5',
     username: 'admin',
     password: 'admin',
+    code: '948210',
     description: 'Full triage authority, status updates, ticket deletion, and system telemetry.',
     destination: '/admin',
     userProfile: {
@@ -53,6 +57,7 @@ const CAMPUS_ROLES = [
     border: '#BFDBFE',
     username: 'student',
     password: 'student',
+    code: '123456',
     description: 'Report campus maintenance issues, track progress, and view live resolution updates.',
     destination: '/dashboard',
     userProfile: {
@@ -74,6 +79,7 @@ const CAMPUS_ROLES = [
     border: '#DDD6FE',
     username: 'faculty',
     password: 'faculty',
+    code: '888888',
     description: 'Submit prioritized reports for lecture halls, laboratories, and departmental infrastructure.',
     destination: '/dashboard',
     userProfile: {
@@ -95,6 +101,7 @@ const CAMPUS_ROLES = [
     border: '#FDE68A',
     username: 'technician',
     password: 'tech',
+    code: '777777',
     description: 'Field engineer access to inspect work orders, verify equipment, and update tickets.',
     destination: '/issues',
     userProfile: {
@@ -109,7 +116,7 @@ const CAMPUS_ROLES = [
 ];
 
 export function AdminLogin() {
-  const { login, logout, isAdmin, currentUser } = useCampusFix();
+  const { login, logout, isAdmin, currentUser, setCurrentUser } = useCampusFix();
   const navigate = useNavigate();
 
   const [selectedRole, setSelectedRole] = useState(CAMPUS_ROLES[0]);
@@ -119,6 +126,10 @@ export function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
+  
+  // New States: Google Auth & CodeSlots
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const [authMethod, setAuthMethod] = useState('credentials'); // 'credentials' | 'codeslots'
 
   // If already logged in and not explicitly switching accounts, show active profile
   const isCurrentlyAuthenticated = currentUser && !isSwitchingAccount;
@@ -131,7 +142,7 @@ export function AdminLogin() {
     setErrorMessage('');
   };
 
-  // Handle Form Submission
+  // Handle Standard Form Submission
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     setErrorMessage('');
@@ -153,6 +164,36 @@ export function AdminLogin() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle CodeSlots 6-digit verification completion
+  const handleCodeSlotsComplete = async (code) => {
+    setLoading(true);
+    setErrorMessage('');
+
+    setTimeout(() => {
+      // Find matching role by code or map dynamically
+      let matchedRole = CAMPUS_ROLES.find((r) => r.code === code) || selectedRole;
+
+      const userProfile = {
+        ...matchedRole.userProfile,
+        authProvider: 'CodeSlots'
+      };
+
+      setCurrentUser(userProfile);
+      localStorage.setItem('campusfix_user', JSON.stringify(userProfile));
+      localStorage.setItem('campusfix_token', `slot_auth_${Date.now()}`);
+
+      setLoading(false);
+
+      if (userProfile.role === 'Admin') {
+        navigate('/admin');
+      } else if (userProfile.role === 'Technician') {
+        navigate('/issues');
+      } else {
+        navigate('/dashboard');
+      }
+    }, 600);
   };
 
   // Quick 1-Click Sign In for Instant Testing
@@ -316,6 +357,13 @@ export function AdminLogin() {
 
   return (
     <div style={{ minHeight: '82vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem 1rem' }}>
+      
+      {/* Google Auth Modal */}
+      <GoogleAuthModal 
+        isOpen={showGoogleModal} 
+        onClose={() => setShowGoogleModal(false)} 
+      />
+
       <div 
         style={{ 
           maxWidth: '520px', 
@@ -329,7 +377,7 @@ export function AdminLogin() {
       >
         
         {/* Top Header */}
-        <div style={{ padding: '2.25rem 2rem 1.5rem', textAlign: 'center', borderBottom: '1px solid #F1F5F9' }}>
+        <div style={{ padding: '2rem 2rem 1.25rem', textAlign: 'center', borderBottom: '1px solid #F1F5F9' }}>
           
           <div 
             style={{ 
@@ -353,7 +401,7 @@ export function AdminLogin() {
             Fixora Campus Portal
           </h1>
           <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, lineHeight: 1.5 }}>
-            Unified access gateway for students, faculty, maintenance staff, and administration.
+            Unified authentication gateway with Google Auth, CodeSlots & Multi-Role Access
           </p>
 
           {/* Minimalist Role Selector Segmented Tabs */}
@@ -365,7 +413,7 @@ export function AdminLogin() {
               backgroundColor: '#F8FAFC', 
               padding: '6px', 
               borderRadius: '14px', 
-              marginTop: '1.5rem',
+              marginTop: '1.25rem',
               border: '1px solid #E2E8F0'
             }}
           >
@@ -405,35 +453,103 @@ export function AdminLogin() {
         </div>
 
         {/* Form Body */}
-        <div style={{ padding: '1.75rem 2rem' }}>
+        <div style={{ padding: '1.5rem 2rem' }}>
           
-          {/* Role Context Pill Banner */}
-          <div 
-            style={{ 
-              backgroundColor: selectedRole.bg, 
-              border: `1px solid ${selectedRole.border}`,
+          {/* Google Auth Button (Pixel-perfect Google OAuth trigger) */}
+          <button
+            type="button"
+            onClick={() => setShowGoogleModal(true)}
+            style={{
+              width: '100%',
+              height: '44px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #CBD5E1',
               borderRadius: '12px',
-              padding: '0.875rem 1rem',
-              marginBottom: '1.5rem',
+              color: '#334155',
+              fontSize: '0.875rem',
+              fontWeight: 600,
               display: 'flex',
-              alignItems: 'flex-start',
-              gap: '10px'
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              cursor: 'pointer',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05)',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#F8FAFC';
+              e.currentTarget.style.borderColor = '#94A3B8';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#FFFFFF';
+              e.currentTarget.style.borderColor = '#CBD5E1';
             }}
           >
-            <div style={{ marginTop: '2px', color: selectedRole.color }}>
-              <ActiveIcon size={16} />
-            </div>
-            <div style={{ flex: 1, fontSize: '0.8rem', lineHeight: 1.45 }}>
-              <div style={{ fontWeight: 700, color: selectedRole.color, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>{selectedRole.name} Access</span>
-                <span style={{ fontSize: '0.675rem', padding: '1px 6px', borderRadius: '4px', backgroundColor: '#ffffff', border: `1px solid ${selectedRole.border}`, color: selectedRole.color }}>
-                  {selectedRole.badge}
-                </span>
-              </div>
-              <div style={{ color: '#475569' }}>
-                {selectedRole.description}
-              </div>
-            </div>
+            <GoogleIcon size={18} />
+            <span>Continue with Google</span>
+          </button>
+
+          {/* Separator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '1.25rem 0' }}>
+            <div style={{ flex: 1, height: '1px', backgroundColor: '#E2E8F0' }} />
+            <span style={{ fontSize: '0.725rem', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              OR SIGN IN VIA
+            </span>
+            <div style={{ flex: 1, height: '1px', backgroundColor: '#E2E8F0' }} />
+          </div>
+
+          {/* Auth Method Sub-Toggle: Standard Credentials vs CodeSlots OTP */}
+          <div 
+            style={{ 
+              display: 'flex', 
+              backgroundColor: '#F1F5F9', 
+              padding: '4px', 
+              borderRadius: '10px', 
+              marginBottom: '1.25rem' 
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setAuthMethod('credentials')}
+              style={{
+                flex: 1,
+                padding: '6px',
+                borderRadius: '8px',
+                border: 'none',
+                fontSize: '0.775rem',
+                fontWeight: authMethod === 'credentials' ? 700 : 500,
+                backgroundColor: authMethod === 'credentials' ? '#FFFFFF' : 'transparent',
+                color: authMethod === 'credentials' ? '#0F172A' : '#64748B',
+                boxShadow: authMethod === 'credentials' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                cursor: 'pointer'
+              }}
+            >
+              Username & Password
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setAuthMethod('codeslots')}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '5px',
+                padding: '6px',
+                borderRadius: '8px',
+                border: 'none',
+                fontSize: '0.775rem',
+                fontWeight: authMethod === 'codeslots' ? 700 : 500,
+                backgroundColor: authMethod === 'codeslots' ? '#FFFFFF' : 'transparent',
+                color: authMethod === 'codeslots' ? '#004643' : '#64748B',
+                boxShadow: authMethod === 'codeslots' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <Hash size={13} />
+              <span>CodeSlots Passcode</span>
+            </button>
           </div>
 
           {/* Error Message */}
@@ -457,90 +573,66 @@ export function AdminLogin() {
             </div>
           )}
 
-          {/* Form Inputs */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            
-            {/* Username / ID Input */}
-            <div>
-              <label 
-                style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  fontSize: '0.8rem', 
-                  fontWeight: 600, 
-                  color: '#334155', 
-                  marginBottom: '6px' 
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <User size={13} style={{ color: '#64748B' }} />
-                  <span>Username / Campus ID</span>
+          {/* METHOD 1: CodeSlots OTP Verification Input */}
+          {authMethod === 'codeslots' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '0.5rem 0' }}>
+              <div style={{ textAlign: 'center', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0F172A' }}>
+                  Enter 6-Digit Campus Passcode
                 </span>
-                <span style={{ fontSize: '0.725rem', color: '#94A3B8', fontWeight: 500 }}>
-                  Preset: <code>{selectedRole.username}</code>
-                </span>
-              </label>
-              <input
-                type="text"
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder={`e.g. ${selectedRole.username}`}
-                style={{
-                  width: '100%',
-                  height: '42px',
-                  padding: '0 0.875rem',
-                  fontSize: '0.875rem',
-                  borderRadius: '10px',
-                  border: '1px solid #E2E8F0',
-                  outline: 'none',
-                  backgroundColor: '#F8FAFC',
-                  color: '#0F172A',
-                  transition: 'all 0.15s ease'
-                }}
-                onFocus={(e) => {
-                  e.target.style.backgroundColor = '#ffffff';
-                  e.target.style.borderColor = '#004643';
-                }}
-                onBlur={(e) => {
-                  e.target.style.backgroundColor = '#F8FAFC';
-                  e.target.style.borderColor = '#E2E8F0';
-                }}
-              />
-            </div>
+                <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '2px 0 0' }}>
+                  Slot-animated verification with spring recoil physics
+                </p>
+              </div>
 
-            {/* Password Input with Show/Hide toggle */}
-            <div>
-              <label 
-                style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  fontSize: '0.8rem', 
-                  fontWeight: 600, 
-                  color: '#334155', 
-                  marginBottom: '6px' 
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <KeyRound size={13} style={{ color: '#64748B' }} />
-                  <span>Password</span>
-                </span>
-                <span style={{ fontSize: '0.725rem', color: '#94A3B8', fontWeight: 500 }}>
-                  Preset: <code>{selectedRole.password}</code>
-                </span>
-              </label>
-              <div style={{ position: 'relative' }}>
+              <CodeSlots 
+                length={6} 
+                presetCode={selectedRole.code}
+                onComplete={handleCodeSlotsComplete}
+                disabled={loading}
+              />
+
+              {loading && (
+                <div style={{ fontSize: '0.8rem', color: '#004643', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Sparkles size={14} className="animate-spin" />
+                  <span>Verifying CodeSlots authentication...</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* METHOD 2: Standard Username & Password */
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              
+              {/* Username Input */}
+              <div>
+                <label 
+                  style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    fontSize: '0.8rem', 
+                    fontWeight: 600, 
+                    color: '#334155', 
+                    marginBottom: '6px' 
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <User size={13} style={{ color: '#64748B' }} />
+                    <span>Username / Campus ID</span>
+                  </span>
+                  <span style={{ fontSize: '0.725rem', color: '#94A3B8', fontWeight: 500 }}>
+                    Preset: <code>{selectedRole.username}</code>
+                  </span>
+                </label>
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type="text"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder={`e.g. ${selectedRole.username}`}
                   style={{
                     width: '100%',
                     height: '42px',
-                    paddingLeft: '0.875rem',
-                    paddingRight: '2.5rem',
+                    padding: '0 0.875rem',
                     fontSize: '0.875rem',
                     borderRadius: '10px',
                     border: '1px solid #E2E8F0',
@@ -558,92 +650,143 @@ export function AdminLogin() {
                     e.target.style.borderColor = '#E2E8F0';
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '10px',
-                    top: '12px',
-                    background: 'none',
-                    border: 'none',
-                    color: '#94A3B8',
-                    cursor: 'pointer',
-                    padding: 0
-                  }}
-                  title={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
               </div>
-            </div>
 
-            {/* Standard Sign In Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn btn-primary"
-              style={{
-                width: '100%',
-                height: '44px',
-                marginTop: '0.5rem',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-            >
-              {loading ? (
-                <span>Authenticating with Fixora...</span>
-              ) : (
-                <>
-                  <Lock size={15} />
-                  <span>Sign In as {selectedRole.name}</span>
-                  <ArrowRight size={15} />
-                </>
-              )}
-            </button>
+              {/* Password Input with Show/Hide toggle */}
+              <div>
+                <label 
+                  style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    fontSize: '0.8rem', 
+                    fontWeight: 600, 
+                    color: '#334155', 
+                    marginBottom: '6px' 
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <KeyRound size={13} style={{ color: '#64748B' }} />
+                    <span>Password</span>
+                  </span>
+                  <span style={{ fontSize: '0.725rem', color: '#94A3B8', fontWeight: 500 }}>
+                    Preset: <code>{selectedRole.password}</code>
+                  </span>
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    style={{
+                      width: '100%',
+                      height: '42px',
+                      paddingLeft: '0.875rem',
+                      paddingRight: '2.5rem',
+                      fontSize: '0.875rem',
+                      borderRadius: '10px',
+                      border: '1px solid #E2E8F0',
+                      outline: 'none',
+                      backgroundColor: '#F8FAFC',
+                      color: '#0F172A',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.backgroundColor = '#ffffff';
+                      e.target.style.borderColor = '#004643';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.backgroundColor = '#F8FAFC';
+                      e.target.style.borderColor = '#E2E8F0';
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '12px',
+                      background: 'none',
+                      border: 'none',
+                      color: '#94A3B8',
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
 
-            {/* Instant 1-Click Sign In Preset Button */}
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handleQuickSignIn(selectedRole)}
-              style={{
-                width: '100%',
-                height: '38px',
-                backgroundColor: '#F8FAFC',
-                border: '1px dashed #CBD5E1',
-                borderRadius: '10px',
-                color: '#334155',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = selectedRole.bg;
-                e.currentTarget.style.borderColor = selectedRole.border;
-                e.currentTarget.style.color = selectedRole.color;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#F8FAFC';
-                e.currentTarget.style.borderColor = '#CBD5E1';
-                e.currentTarget.style.color = '#334155';
-              }}
-              title="One-click test authentication for lab demonstration"
-            >
-              <Sparkles size={14} />
-              <span>Instant 1-Click Demo Login</span>
-            </button>
+              {/* Standard Sign In Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn btn-primary"
+                style={{
+                  width: '100%',
+                  height: '44px',
+                  marginTop: '0.25rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                {loading ? (
+                  <span>Authenticating with Fixora...</span>
+                ) : (
+                  <>
+                    <Lock size={15} />
+                    <span>Sign In as {selectedRole.name}</span>
+                    <ArrowRight size={15} />
+                  </>
+                )}
+              </button>
 
-          </form>
+              {/* Instant 1-Click Sign In Preset Button */}
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => handleQuickSignIn(selectedRole)}
+                style={{
+                  width: '100%',
+                  height: '38px',
+                  backgroundColor: '#F8FAFC',
+                  border: '1px dashed #CBD5E1',
+                  borderRadius: '10px',
+                  color: '#334155',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = selectedRole.bg;
+                  e.currentTarget.style.borderColor = selectedRole.border;
+                  e.currentTarget.style.color = selectedRole.color;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#F8FAFC';
+                  e.currentTarget.style.borderColor = '#CBD5E1';
+                  e.currentTarget.style.color = '#334155';
+                }}
+              >
+                <Sparkles size={14} />
+                <span>Instant 1-Click Demo Login</span>
+              </button>
+
+            </form>
+          )}
 
         </div>
 
@@ -661,7 +804,7 @@ export function AdminLogin() {
           }}
         >
           <Link
-            to="/dashboard"
+            to="/"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -672,11 +815,11 @@ export function AdminLogin() {
             }}
           >
             <ArrowLeft size={13} />
-            <span>Guest Campus View</span>
+            <span>Home Landing Page</span>
           </Link>
 
           <span style={{ fontSize: '0.725rem', color: '#94A3B8' }}>
-            Fixora Auth · Experiment 9
+            Fixora Auth · Google OAuth & CodeSlots
           </span>
         </div>
 
