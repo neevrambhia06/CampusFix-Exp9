@@ -116,7 +116,7 @@ export function Sidebar(props) {
             );
           })}
 
-          {/* Admin Portal Gateway / Login */}
+          {/* Campus Portal Gateway / Login */}
           <li>
             <NavLink
               to={isAdmin ? '/admin' : '/login'}
@@ -135,7 +135,7 @@ export function Sidebar(props) {
               ) : (
                 <>
                   <Lock size={18} className="nav-icon" style={{ color: 'var(--accent-amber)' }} />
-                  <span>Admin Login</span>
+                  <span>Portal Login</span>
                 </>
               )}
             </NavLink>

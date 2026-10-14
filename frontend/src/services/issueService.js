@@ -70,7 +70,7 @@ export async function deleteIssue(id) {
   return await response.json();
 }
 
-export async function loginAdmin(username, password) {
+export async function loginUser(username, password) {
   try {
     const response = await fetch(AUTH_URL, {
       method: 'POST',
@@ -86,8 +86,11 @@ export async function loginAdmin(username, password) {
     console.warn('Backend auth unreachable, falling back to local verification:', err.message);
   }
 
-  // Fallback client validation
-  if (username === 'admin' && password === 'admin') {
+  // Fallback client validation & offline demo support
+  const cleanUser = (username || '').trim().toLowerCase();
+  const cleanPass = (password || '').trim();
+
+  if (cleanUser === 'admin' && (cleanPass === 'admin' || cleanPass === 'admin123')) {
     return {
       success: true,
       user: {
@@ -95,13 +98,81 @@ export async function loginAdmin(username, password) {
         name: 'Campus Administrator',
         username: 'admin',
         role: 'Admin',
-        department: 'Campus Operations Directorate',
-        email: 'admin@campusfix.edu',
+        department: 'Campus Maintenance Directorate',
+        email: 'admin@fixora.edu',
         avatar: '🛡️',
       },
       token: `adm_local_${Date.now()}`,
     };
   }
 
-  throw new Error('Invalid username or password. Please use admin / admin');
+  if (cleanUser === 'student' || cleanUser === 'aarav' || cleanUser.includes('student')) {
+    return {
+      success: true,
+      user: {
+        id: 'STU-2026-88',
+        name: 'Aarav Shah',
+        username: 'student',
+        role: 'Student',
+        department: 'Computer Science & Engg.',
+        email: 'aarav.shah@campus.edu',
+        avatar: '🎓',
+      },
+      token: `stu_local_${Date.now()}`,
+    };
+  }
+
+  if (cleanUser === 'faculty' || cleanUser === 'teacher' || cleanUser.includes('prof')) {
+    return {
+      success: true,
+      user: {
+        id: 'FAC-2026-14',
+        name: 'Dr. Neha Sen',
+        username: 'faculty',
+        role: 'Faculty',
+        department: 'Information Technology',
+        email: 'neha.sen@campus.edu',
+        avatar: '👩‍🏫',
+      },
+      token: `fac_local_${Date.now()}`,
+    };
+  }
+
+  if (cleanUser === 'technician' || cleanUser === 'tech' || cleanUser.includes('crew')) {
+    return {
+      success: true,
+      user: {
+        id: 'TECH-2026-03',
+        name: 'Ramesh Patel',
+        username: 'technician',
+        role: 'Technician',
+        department: 'Electrical & HVAC Services',
+        email: 'ramesh.patel@fixora.edu',
+        avatar: '🔧',
+      },
+      token: `tech_local_${Date.now()}`,
+    };
+  }
+
+  // Any non-empty credentials can log in as a registered campus member
+  if (cleanUser && cleanPass) {
+    return {
+      success: true,
+      user: {
+        id: `USR-${Date.now().toString().slice(-4)}`,
+        name: username.trim(),
+        username: cleanUser,
+        role: 'Student',
+        department: 'Campus Resident',
+        email: `${cleanUser}@campus.edu`,
+        avatar: username.charAt(0).toUpperCase(),
+      },
+      token: `usr_local_${Date.now()}`,
+    };
+  }
+
+  throw new Error('Please enter a valid username and password.');
 }
+
+// Backward-compatible alias for existing imports
+export const loginAdmin = loginUser;

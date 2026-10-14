@@ -12,13 +12,16 @@ export function MyReports(props) {
   const user = props.user || context.currentUser;
   const issues = props.issues || context.issues;
 
-  const myIssues = issues.filter(
-    (i) =>
-      (i.reporter && i.reporter.toLowerCase().includes('aarav')) ||
-      (i.reportedBy && i.reportedBy.toLowerCase().includes('aarav')) ||
-      (user && i.reporter === user.name) ||
-      (user && i.reportedBy === user.name)
-  );
+  const userName = (user?.name || '').toLowerCase();
+  const myIssues = issues.filter((i) => {
+    const rep = (i.reporter || i.reportedBy || '').toLowerCase();
+    if (!rep) return false;
+    if (userName && (rep === userName || rep.includes(userName) || userName.includes(rep))) {
+      return true;
+    }
+    // Default fallback if initial student
+    return userName.includes('aarav') && rep.includes('aarav');
+  });
 
   const total = myIssues.length;
   const pending = myIssues.filter((i) => i.status === 'Reported').length;

@@ -1,202 +1,683 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShieldCheck, Lock, User, ArrowRight, AlertCircle, ArrowLeft, KeyRound } from 'lucide-react';
+import { 
+  ShieldCheck, 
+  GraduationCap, 
+  Briefcase, 
+  Wrench, 
+  Lock, 
+  User, 
+  ArrowRight, 
+  AlertCircle, 
+  ArrowLeft, 
+  KeyRound, 
+  Eye, 
+  EyeOff, 
+  Sparkles,
+  CheckCircle2,
+  LogOut,
+  ChevronRight
+} from 'lucide-react';
 import { useCampusFix } from '../context/CampusFixContext';
 
+// Define the 4 core campus roles
+const CAMPUS_ROLES = [
+  {
+    id: 'admin',
+    name: 'Administrator',
+    icon: ShieldCheck,
+    badge: 'SUPER ADMIN',
+    color: '#004643',
+    bg: '#E6F2F1',
+    border: '#B2D8D5',
+    username: 'admin',
+    password: 'admin',
+    description: 'Full triage authority, status updates, ticket deletion, and system telemetry.',
+    destination: '/admin',
+    userProfile: {
+      id: 'ADM-2026-01',
+      name: 'Campus Administrator',
+      role: 'Admin',
+      department: 'Campus Maintenance Directorate',
+      email: 'admin@fixora.edu',
+      avatar: '🛡️'
+    }
+  },
+  {
+    id: 'student',
+    name: 'Student',
+    icon: GraduationCap,
+    badge: 'CAMPUS RESIDENT',
+    color: '#2563EB',
+    bg: '#EFF6FF',
+    border: '#BFDBFE',
+    username: 'student',
+    password: 'student',
+    description: 'Report campus maintenance issues, track progress, and view live resolution updates.',
+    destination: '/dashboard',
+    userProfile: {
+      id: 'STU-2026-88',
+      name: 'Aarav Shah',
+      role: 'Student',
+      department: 'Computer Science & Engg.',
+      email: 'aarav.shah@campus.edu',
+      avatar: '🎓'
+    }
+  },
+  {
+    id: 'faculty',
+    name: 'Faculty',
+    icon: Briefcase,
+    badge: 'ACADEMIC STAFF',
+    color: '#7C3AED',
+    bg: '#F5F3FF',
+    border: '#DDD6FE',
+    username: 'faculty',
+    password: 'faculty',
+    description: 'Submit prioritized reports for lecture halls, laboratories, and departmental infrastructure.',
+    destination: '/dashboard',
+    userProfile: {
+      id: 'FAC-2026-14',
+      name: 'Dr. Neha Sen',
+      role: 'Faculty',
+      department: 'Information Technology',
+      email: 'neha.sen@campus.edu',
+      avatar: '👩‍🏫'
+    }
+  },
+  {
+    id: 'technician',
+    name: 'Technician',
+    icon: Wrench,
+    badge: 'OPERATIONS CREW',
+    color: '#D97706',
+    bg: '#FFFBEB',
+    border: '#FDE68A',
+    username: 'technician',
+    password: 'tech',
+    description: 'Field engineer access to inspect work orders, verify equipment, and update tickets.',
+    destination: '/issues',
+    userProfile: {
+      id: 'TECH-2026-03',
+      name: 'Ramesh Patel',
+      role: 'Technician',
+      department: 'Electrical & HVAC Services',
+      email: 'ramesh.patel@fixora.edu',
+      avatar: '🔧'
+    }
+  }
+];
+
 export function AdminLogin() {
-  const { login, isAdmin, currentUser } = useCampusFix();
+  const { login, logout, isAdmin, currentUser } = useCampusFix();
   const navigate = useNavigate();
 
+  const [selectedRole, setSelectedRole] = useState(CAMPUS_ROLES[0]);
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('admin');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
 
-  // If already admin, redirect to admin dashboard
-  if (isAdmin) {
-    return (
-      <div className="state-box" style={{ maxWidth: '500px', margin: '4rem auto' }}>
-        <ShieldCheck size={48} style={{ color: 'var(--primary)', marginBottom: '1rem' }} />
-        <h2 className="state-title">Already Logged In as Admin</h2>
-        <p className="state-message">
-          You are currently signed in as <strong>{currentUser.name}</strong>.
-        </p>
-        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-          <button onClick={() => navigate('/admin')} className="btn btn-primary">
-            Go to Admin Dashboard
-          </button>
-          <Link to="/dashboard" className="btn btn-secondary">
-            Return to User Dashboard
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  // If already logged in and not explicitly switching accounts, show active profile
+  const isCurrentlyAuthenticated = currentUser && !isSwitchingAccount;
 
+  // Handle Role selection
+  const handleSelectRole = (role) => {
+    setSelectedRole(role);
+    setUsername(role.username);
+    setPassword(role.password);
+    setErrorMessage('');
+  };
+
+  // Handle Form Submission
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setErrorMessage('');
     setLoading(true);
 
     try {
-      await login(username, password);
-      navigate('/admin');
+      const authenticatedUser = await login(username, password);
+      setIsSwitchingAccount(false);
+
+      if (authenticatedUser?.role === 'Admin') {
+        navigate('/admin');
+      } else if (authenticatedUser?.role === 'Technician') {
+        navigate('/issues');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
-      setErrorMessage(err.message || 'Invalid username or password. Use admin / admin');
+      setErrorMessage(err.message || 'Invalid credentials. Select a role above or use demo access.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFillDemo = () => {
-    setUsername('admin');
-    setPassword('admin');
+  // Quick 1-Click Sign In for Instant Testing
+  const handleQuickSignIn = async (role) => {
+    setSelectedRole(role);
+    setUsername(role.username);
+    setPassword(role.password);
     setErrorMessage('');
+    setLoading(true);
+
+    try {
+      const authenticatedUser = await login(role.username, role.password);
+      setIsSwitchingAccount(false);
+
+      if (authenticatedUser?.role === 'Admin') {
+        navigate('/admin');
+      } else if (authenticatedUser?.role === 'Technician') {
+        navigate('/issues');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      setErrorMessage(err.message || 'Quick login failed. Try entering credentials manually.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <div className="admin-login-wrapper" style={{ minHeight: '75vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div className="card" style={{ maxWidth: '440px', width: '100%', padding: '2.5rem 2rem', boxShadow: 'var(--shadow-lg)' }}>
-        
-        {/* Header Icon & Title */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '16px',
-            backgroundColor: 'var(--primary-light)',
-            color: 'var(--primary)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '1rem'
-          }}>
-            <ShieldCheck size={32} />
-          </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.35rem' }}>
-            Fixora Admin Portal
-          </h1>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Sign in with administrative credentials to manage campus tickets.
-          </p>
-        </div>
-
-        {/* Demo Credentials Tip Banner */}
-        <div style={{
-          backgroundColor: 'var(--bg-subtle)',
-          border: '1px dashed var(--border-light)',
-          borderRadius: 'var(--radius-md)',
-          padding: '0.75rem 1rem',
-          marginBottom: '1.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '0.825rem'
-        }}>
-          <div>
-            <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Demo Access: </span>
-            <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>admin</code> / <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>admin</code>
-          </div>
-          <button
-            type="button"
-            onClick={handleFillDemo}
-            className="btn btn-sm btn-secondary"
-            style={{ padding: '3px 8px', fontSize: '0.75rem' }}
+  // State: Already Logged In View
+  if (isCurrentlyAuthenticated && currentUser.name) {
+    return (
+      <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+        <div 
+          style={{ 
+            maxWidth: '480px', 
+            width: '100%', 
+            backgroundColor: '#ffffff', 
+            borderRadius: '20px', 
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 10px 30px -5px rgba(15, 23, 42, 0.08)',
+            padding: '2.5rem 2rem',
+            textAlign: 'center'
+          }}
+        >
+          {/* Avatar Icon */}
+          <div 
+            style={{ 
+              width: '68px', 
+              height: '68px', 
+              borderRadius: '20px', 
+              backgroundColor: isAdmin ? '#E6F2F1' : '#F1F5F9', 
+              color: isAdmin ? '#004643' : '#334155', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              fontSize: '1.75rem',
+              marginBottom: '1.25rem',
+              boxShadow: '0 4px 12px rgba(15, 23, 42, 0.05)'
+            }}
           >
-            Auto-fill
-          </button>
+            {currentUser.avatar || <User size={32} />}
+          </div>
+
+          <div style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '9999px', fontSize: '0.725rem', fontWeight: 700, letterSpacing: '0.04em', backgroundColor: isAdmin ? '#ECFDF5' : '#EFF6FF', color: isAdmin ? '#047857' : '#2563EB', marginBottom: '0.75rem' }}>
+            {currentUser.role?.toUpperCase() || 'CAMPUS MEMBER'}
+          </div>
+
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.25rem', letterSpacing: '-0.02em' }}>
+            {currentUser.name}
+          </h2>
+
+          <p style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '0.25rem' }}>
+            {currentUser.email || `${currentUser.username || 'user'}@campus.edu`}
+          </p>
+
+          <p style={{ fontSize: '0.8rem', color: '#94A3B8', marginBottom: '2rem' }}>
+            {currentUser.department || 'Campus Community'}
+          </p>
+
+          {/* Action Navigation Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {isAdmin ? (
+              <button 
+                onClick={() => navigate('/admin')} 
+                className="btn btn-primary"
+                style={{ padding: '0.75rem', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+              >
+                <ShieldCheck size={18} />
+                <span>Open Admin Control Center</span>
+                <ArrowRight size={16} />
+              </button>
+            ) : (
+              <button 
+                onClick={() => navigate('/dashboard')} 
+                className="btn btn-primary"
+                style={{ padding: '0.75rem', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+              >
+                <span>Continue to Dashboard</span>
+                <ArrowRight size={16} />
+              </button>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <button 
+                onClick={() => navigate('/issues')} 
+                className="btn btn-secondary"
+                style={{ padding: '0.625rem', fontSize: '0.825rem' }}
+              >
+                Browse Tickets
+              </button>
+
+              <button 
+                onClick={() => navigate('/report')} 
+                className="btn btn-secondary"
+                style={{ padding: '0.625rem', fontSize: '0.825rem' }}
+              >
+                Report Problem
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                logout();
+                setIsSwitchingAccount(true);
+              }}
+              style={{
+                marginTop: '0.75rem',
+                padding: '0.625rem',
+                background: 'transparent',
+                border: '1px solid #E2E8F0',
+                borderRadius: '10px',
+                color: '#64748B',
+                fontSize: '0.825rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#F8FAFC';
+                e.currentTarget.style.color = '#0F172A';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = '#64748B';
+              }}
+            >
+              <LogOut size={14} />
+              <span>Sign In as Another Role</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const ActiveIcon = selectedRole.icon;
+
+  return (
+    <div style={{ minHeight: '82vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem 1rem' }}>
+      <div 
+        style={{ 
+          maxWidth: '520px', 
+          width: '100%', 
+          backgroundColor: '#ffffff', 
+          borderRadius: '24px', 
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 12px 36px -6px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04)',
+          overflow: 'hidden'
+        }}
+      >
+        
+        {/* Top Header */}
+        <div style={{ padding: '2.25rem 2rem 1.5rem', textAlign: 'center', borderBottom: '1px solid #F1F5F9' }}>
+          
+          <div 
+            style={{ 
+              width: '54px', 
+              height: '54px', 
+              borderRadius: '16px', 
+              backgroundColor: selectedRole.bg, 
+              color: selectedRole.color, 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              marginBottom: '1rem',
+              transition: 'all 0.2s ease',
+              border: `1px solid ${selectedRole.border}`
+            }}
+          >
+            <ActiveIcon size={28} />
+          </div>
+
+          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', margin: '0 0 0.35rem 0' }}>
+            Fixora Campus Portal
+          </h1>
+          <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, lineHeight: 1.5 }}>
+            Unified access gateway for students, faculty, maintenance staff, and administration.
+          </p>
+
+          {/* Minimalist Role Selector Segmented Tabs */}
+          <div 
+            style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(4, 1fr)', 
+              gap: '6px', 
+              backgroundColor: '#F8FAFC', 
+              padding: '6px', 
+              borderRadius: '14px', 
+              marginTop: '1.5rem',
+              border: '1px solid #E2E8F0'
+            }}
+          >
+            {CAMPUS_ROLES.map((role) => {
+              const Icon = role.icon;
+              const isSelected = selectedRole.id === role.id;
+
+              return (
+                <button
+                  key={role.id}
+                  type="button"
+                  onClick={() => handleSelectRole(role)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '8px 4px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    backgroundColor: isSelected ? '#ffffff' : 'transparent',
+                    color: isSelected ? role.color : '#64748B',
+                    boxShadow: isSelected ? '0 2px 6px rgba(15, 23, 42, 0.08)' : 'none',
+                    cursor: 'pointer',
+                    fontWeight: isSelected ? 700 : 500,
+                    fontSize: '0.75rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Icon size={16} />
+                  <span>{role.name}</span>
+                </button>
+              );
+            })}
+          </div>
+
         </div>
 
-        {/* Error Alert */}
-        {errorMessage && (
-          <div style={{
-            backgroundColor: 'var(--status-reported-bg)',
-            color: 'var(--status-reported-text)',
-            border: '1px solid var(--status-reported-border)',
-            borderRadius: 'var(--radius-md)',
-            padding: '0.75rem 1rem',
-            marginBottom: '1.25rem',
-            fontSize: '0.85rem',
+        {/* Form Body */}
+        <div style={{ padding: '1.75rem 2rem' }}>
+          
+          {/* Role Context Pill Banner */}
+          <div 
+            style={{ 
+              backgroundColor: selectedRole.bg, 
+              border: `1px solid ${selectedRole.border}`,
+              borderRadius: '12px',
+              padding: '0.875rem 1rem',
+              marginBottom: '1.5rem',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px'
+            }}
+          >
+            <div style={{ marginTop: '2px', color: selectedRole.color }}>
+              <ActiveIcon size={16} />
+            </div>
+            <div style={{ flex: 1, fontSize: '0.8rem', lineHeight: 1.45 }}>
+              <div style={{ fontWeight: 700, color: selectedRole.color, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>{selectedRole.name} Access</span>
+                <span style={{ fontSize: '0.675rem', padding: '1px 6px', borderRadius: '4px', backgroundColor: '#ffffff', border: `1px solid ${selectedRole.border}`, color: selectedRole.color }}>
+                  {selectedRole.badge}
+                </span>
+              </div>
+              <div style={{ color: '#475569' }}>
+                {selectedRole.description}
+              </div>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {errorMessage && (
+            <div 
+              style={{
+                backgroundColor: '#FFF1F2',
+                color: '#BE123C',
+                border: '1px solid #FECDD3',
+                borderRadius: '12px',
+                padding: '0.75rem 1rem',
+                marginBottom: '1.25rem',
+                fontSize: '0.825rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
+          {/* Form Inputs */}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            
+            {/* Username / ID Input */}
+            <div>
+              <label 
+                style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 600, 
+                  color: '#334155', 
+                  marginBottom: '6px' 
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <User size={13} style={{ color: '#64748B' }} />
+                  <span>Username / Campus ID</span>
+                </span>
+                <span style={{ fontSize: '0.725rem', color: '#94A3B8', fontWeight: 500 }}>
+                  Preset: <code>{selectedRole.username}</code>
+                </span>
+              </label>
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder={`e.g. ${selectedRole.username}`}
+                style={{
+                  width: '100%',
+                  height: '42px',
+                  padding: '0 0.875rem',
+                  fontSize: '0.875rem',
+                  borderRadius: '10px',
+                  border: '1px solid #E2E8F0',
+                  outline: 'none',
+                  backgroundColor: '#F8FAFC',
+                  color: '#0F172A',
+                  transition: 'all 0.15s ease'
+                }}
+                onFocus={(e) => {
+                  e.target.style.backgroundColor = '#ffffff';
+                  e.target.style.borderColor = '#004643';
+                }}
+                onBlur={(e) => {
+                  e.target.style.backgroundColor = '#F8FAFC';
+                  e.target.style.borderColor = '#E2E8F0';
+                }}
+              />
+            </div>
+
+            {/* Password Input with Show/Hide toggle */}
+            <div>
+              <label 
+                style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 600, 
+                  color: '#334155', 
+                  marginBottom: '6px' 
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <KeyRound size={13} style={{ color: '#64748B' }} />
+                  <span>Password</span>
+                </span>
+                <span style={{ fontSize: '0.725rem', color: '#94A3B8', fontWeight: 500 }}>
+                  Preset: <code>{selectedRole.password}</code>
+                </span>
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter password"
+                  style={{
+                    width: '100%',
+                    height: '42px',
+                    paddingLeft: '0.875rem',
+                    paddingRight: '2.5rem',
+                    fontSize: '0.875rem',
+                    borderRadius: '10px',
+                    border: '1px solid #E2E8F0',
+                    outline: 'none',
+                    backgroundColor: '#F8FAFC',
+                    color: '#0F172A',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.backgroundColor = '#ffffff';
+                    e.target.style.borderColor = '#004643';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.backgroundColor = '#F8FAFC';
+                    e.target.style.borderColor = '#E2E8F0';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '12px',
+                    background: 'none',
+                    border: 'none',
+                    color: '#94A3B8',
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Standard Sign In Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary"
+              style={{
+                width: '100%',
+                height: '44px',
+                marginTop: '0.5rem',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              {loading ? (
+                <span>Authenticating with Fixora...</span>
+              ) : (
+                <>
+                  <Lock size={15} />
+                  <span>Sign In as {selectedRole.name}</span>
+                  <ArrowRight size={15} />
+                </>
+              )}
+            </button>
+
+            {/* Instant 1-Click Sign In Preset Button */}
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => handleQuickSignIn(selectedRole)}
+              style={{
+                width: '100%',
+                height: '38px',
+                backgroundColor: '#F8FAFC',
+                border: '1px dashed #CBD5E1',
+                borderRadius: '10px',
+                color: '#334155',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = selectedRole.bg;
+                e.currentTarget.style.borderColor = selectedRole.border;
+                e.currentTarget.style.color = selectedRole.color;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#F8FAFC';
+                e.currentTarget.style.borderColor = '#CBD5E1';
+                e.currentTarget.style.color = '#334155';
+              }}
+              title="One-click test authentication for lab demonstration"
+            >
+              <Sparkles size={14} />
+              <span>Instant 1-Click Demo Login</span>
+            </button>
+
+          </form>
+
+        </div>
+
+        {/* Footer Navigation */}
+        <div 
+          style={{ 
+            padding: '1.25rem 2rem', 
+            backgroundColor: '#F8FAFC', 
+            borderTop: '1px solid #F1F5F9',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
-          }}>
-            <AlertCircle size={16} style={{ flexShrink: 0 }} />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          
-          <div className="form-group">
-            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <User size={14} />
-              <span>Username</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter admin username"
-              className="form-input"
-              style={{ width: '100%' }}
-              autoComplete="username"
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <KeyRound size={14} />
-              <span>Password</span>
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              className="form-input"
-              style={{ width: '100%' }}
-              autoComplete="current-password"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem' }}
-          >
-            {loading ? (
-              <span>Verifying Credentials...</span>
-            ) : (
-              <>
-                <Lock size={16} style={{ marginRight: '6px' }} />
-                <span>Log In as Administrator</span>
-                <ArrowRight size={16} style={{ marginLeft: '6px' }} />
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* Bottom Navigation */}
-        <div style={{ marginTop: '2rem', textAlign: 'center', borderTop: '1px solid var(--border-light)', paddingTop: '1.25rem' }}>
+            justifyContent: 'space-between',
+            fontSize: '0.8rem',
+            color: '#64748B'
+          }}
+        >
           <Link
             to="/dashboard"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.85rem',
-              color: 'var(--text-muted)',
-              textDecoration: 'none'
+              gap: '5px',
+              color: '#64748B',
+              textDecoration: 'none',
+              fontWeight: 500
             }}
           >
-            <ArrowLeft size={14} />
-            <span>Return to Fixora Student Portal</span>
+            <ArrowLeft size={13} />
+            <span>Guest Campus View</span>
           </Link>
+
+          <span style={{ fontSize: '0.725rem', color: '#94A3B8' }}>
+            Fixora Auth · Experiment 9
+          </span>
         </div>
 
       </div>

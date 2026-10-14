@@ -204,7 +204,7 @@ export function TopBar(props) {
                         style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 600 }}
                       >
                         <Lock size={16} />
-                        <span>Admin Login</span>
+                        <span>Portal Login / Switch Role</span>
                       </Link>
                     </li>
                   </>

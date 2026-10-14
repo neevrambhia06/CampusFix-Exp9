@@ -35,9 +35,86 @@ public class AuthController {
             ));
         }
 
+        if (("student".equalsIgnoreCase(username) || "aarav".equalsIgnoreCase(username)) && ("student".equals(password) || "student123".equals(password))) {
+            Map<String, Object> studentUser = Map.of(
+                    "id", "STU-2026-88",
+                    "name", "Aarav Shah",
+                    "username", "student",
+                    "role", "Student",
+                    "department", "Computer Science & Engg.",
+                    "email", "aarav.shah@campus.edu",
+                    "avatar", "🎓"
+            );
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Student authentication successful",
+                    "token", "stu_" + UUID.randomUUID().toString().replace("-", ""),
+                    "user", studentUser
+            ));
+        }
+
+        if ("faculty".equalsIgnoreCase(username) && ("faculty".equals(password) || "faculty123".equals(password))) {
+            Map<String, Object> facultyUser = Map.of(
+                    "id", "FAC-2026-14",
+                    "name", "Dr. Neha Sen",
+                    "username", "faculty",
+                    "role", "Faculty",
+                    "department", "Information Technology",
+                    "email", "neha.sen@campus.edu",
+                    "avatar", "👩‍🏫"
+            );
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Faculty authentication successful",
+                    "token", "fac_" + UUID.randomUUID().toString().replace("-", ""),
+                    "user", facultyUser
+            ));
+        }
+
+        if (("technician".equalsIgnoreCase(username) || "tech".equalsIgnoreCase(username)) && ("technician".equals(password) || "tech".equals(password))) {
+            Map<String, Object> techUser = Map.of(
+                    "id", "TECH-2026-03",
+                    "name", "Ramesh Patel",
+                    "username", "technician",
+                    "role", "Technician",
+                    "department", "Electrical & Facilities",
+                    "email", "ramesh.patel@fixora.edu",
+                    "avatar", "🔧"
+            );
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Technician authentication successful",
+                    "token", "tech_" + UUID.randomUUID().toString().replace("-", ""),
+                    "user", techUser
+            ));
+        }
+
+        // Generic custom campus member
+        if (!username.isBlank() && !password.isBlank()) {
+            Map<String, Object> customUser = Map.of(
+                    "id", "USR-" + Math.abs(username.hashCode() % 10000),
+                    "name", username,
+                    "username", username.toLowerCase(),
+                    "role", "Student",
+                    "department", "Campus Resident",
+                    "email", username.toLowerCase() + "@campus.edu",
+                    "avatar", username.substring(0, 1).toUpperCase()
+            );
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Campus member authentication successful",
+                    "token", "usr_" + UUID.randomUUID().toString().replace("-", ""),
+                    "user", customUser
+            ));
+        }
+
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                 "success", false,
-                "message", "Invalid credentials. Use username: admin and password: admin"
+                "message", "Invalid credentials. Please enter a valid username and password."
         ));
     }
 }
