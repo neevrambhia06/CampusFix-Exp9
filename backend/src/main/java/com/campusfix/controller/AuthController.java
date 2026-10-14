@@ -23,7 +23,7 @@ public class AuthController {
                     "username", "admin",
                     "role", "Admin",
                     "department", "Campus Maintenance Directorate",
-                    "email", "admin@campusfix.edu",
+                    "email", "admin@fixora.edu",
                     "avatar", "🛡️"
             );
 

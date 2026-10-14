@@ -46,7 +46,7 @@ export function AdminDashboard() {
         <ShieldCheck size={48} style={{ color: 'var(--priority-high-text)', marginBottom: '1rem' }} />
         <h2 className="state-title">Administrator Access Required</h2>
         <p className="state-message">
-          You must be logged in with administrative credentials to access the CampusFix Control Center.
+          You must be logged in with administrative credentials to access the Fixora Control Center.
         </p>
         <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
           <button onClick={() => navigate('/login')} className="btn btn-primary">
@@ -117,7 +117,7 @@ export function AdminDashboard() {
               </span>
             </div>
             <p style={{ margin: '4px 0 0 0', opacity: 0.85, fontSize: '0.875rem' }}>
-              Signed in as <strong>{currentUser.name}</strong> ({currentUser.email || 'admin@campusfix.edu'})
+              Signed in as <strong>{currentUser.name}</strong> ({currentUser.email || 'admin@fixora.edu'})
             </p>
           </div>
         </div>

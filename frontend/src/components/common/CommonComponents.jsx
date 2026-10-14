@@ -101,7 +101,7 @@ export function ErrorState(props) {
       <h3 className="state-title">{title}</h3>
       <p className="state-message">{message}</p>
       <p className="error-tip">
-        Please check your internet connection or verify that the CampusFix API backend service is running.
+        Please check your internet connection or verify that the Fixora API backend service is running.
       </p>
       <div className="error-actions">
         {onRetry && (

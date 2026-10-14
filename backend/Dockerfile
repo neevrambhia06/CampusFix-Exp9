@@ -1,5 +1,5 @@
 # ==========================================
-# CampusFix Backend Dockerfile
+# Fixora Backend Dockerfile
 # Multi-stage build for Spring Boot on Render
 # ==========================================
 

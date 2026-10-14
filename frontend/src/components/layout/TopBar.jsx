@@ -24,7 +24,7 @@ export function TopBar(props) {
     if (path === '/maintenance-team') return 'Maintenance Personnel Roster';
     if (path === '/admin') return 'Administrator Control Center';
     if (path === '/login') return 'Admin Portal Login';
-    return 'CampusFix Workspace';
+    return 'Fixora Workspace';
   };
 
   const notifications = [
@@ -58,7 +58,7 @@ export function TopBar(props) {
     <header className="topbar-shell">
       <div className="topbar-left">
         <div className="breadcrumb-path">
-          <span className="breadcrumb-root">CampusFix</span>
+          <span className="breadcrumb-root">Fixora</span>
           <span className="breadcrumb-separator">/</span>
           <span className="breadcrumb-current">{getBreadcrumb()}</span>
         </div>

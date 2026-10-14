@@ -153,7 +153,7 @@ export function ReportIssueForm({ onSuccessReturn }) {
           <CheckCircle2 size={48} className="success-icon-svg" />
           <h2 className="state-title">Issue Reported Successfully!</h2>
           <p className="state-message">
-            Issue reported successfully. The ticket has been sent to JSON Server and registered into CampusFix shared state.
+            Issue reported successfully. The ticket has been sent to the backend API and registered into Fixora system.
           </p>
           <div className="success-actions">
             {onSuccessReturn && (

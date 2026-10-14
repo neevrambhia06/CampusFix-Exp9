@@ -74,7 +74,7 @@ export function AdminLogin() {
             <ShieldCheck size={32} />
           </div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.35rem' }}>
-            CampusFix Admin Portal
+            Fixora Admin Portal
           </h1>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
             Sign in with administrative credentials to manage campus tickets.
@@ -195,7 +195,7 @@ export function AdminLogin() {
             }}
           >
             <ArrowLeft size={14} />
-            <span>Return to CampusFix Student Portal</span>
+            <span>Return to Fixora Student Portal</span>
           </Link>
         </div>
 

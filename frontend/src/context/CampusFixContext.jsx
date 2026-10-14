@@ -69,7 +69,7 @@ export function CampusFixProvider({ children }) {
       setDataSource('api');
     } catch (err) {
       console.warn('REST API unavailable. Falling back to mockData.js:', err.message);
-      setError('Unable to connect to CampusFix API. Showing cached mock data.');
+      setError('Unable to connect to Fixora API. Showing cached mock data.');
       setIssues(mockIssues);
       setDataSource('mock');
     } finally {

@@ -23,7 +23,7 @@ public class IssueController {
     @GetMapping("/")
     public ResponseEntity<Map<String, Object>> root() {
         return ResponseEntity.ok(Map.of(
-                "service", "CampusFix Spring Boot REST API",
+                "service", "Fixora Spring Boot REST API",
                 "status", "UP",
                 "endpoints", List.of("/api/health", "/api/issues")
         ));
@@ -33,8 +33,8 @@ public class IssueController {
     public ResponseEntity<Map<String, String>> healthCheck() {
         return ResponseEntity.ok(Map.of(
                 "status", "UP",
-                "service", "CampusFix Spring Boot Backend",
-                "message", "CampusFix API is running successfully"
+                "service", "Fixora Spring Boot Backend",
+                "message", "Fixora API is running successfully"
         ));
     }
 

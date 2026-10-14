@@ -14,8 +14,8 @@
     <groupId>com.campusfix</groupId>
     <artifactId>campusfix-backend</artifactId>
     <version>1.0.0</version>
-    <name>CampusFix Backend</name>
-    <description>Spring Boot REST API backend for the CampusFix campus issue management system</description>
+    <name>Fixora Backend</name>
+    <description>Spring Boot REST API backend for the Fixora campus issue management system</description>
 
     <properties>
         <java.version>21</java.version>

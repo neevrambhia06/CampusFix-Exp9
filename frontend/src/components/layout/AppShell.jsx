@@ -43,7 +43,7 @@ export function AppShell(props) {
         <footer className="app-footer">
           <div className="footer-content">
             <div className="footer-left">
-              <strong>CampusFix</strong> — Smart Campus Issue Reporting & Maintenance System
+              <strong>Fixora</strong> — Smart Campus Issue Reporting & Maintenance System
             </div>
             <div className="footer-right">
               Active Session: <strong>{activeUser.name}</strong> ({activeUser.role}) · WMD Exp 9

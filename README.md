@@ -1,4 +1,4 @@
-# Experiment 9 — CampusFix Full-Stack System
+# Experiment 9 — Fixora Full-Stack System
 ### Spring Boot REST API + React 19 Frontend + Docker + Render Deployment + Admin Portal
 
 ---

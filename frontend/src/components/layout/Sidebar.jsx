@@ -42,7 +42,7 @@ export function Sidebar(props) {
         </div>
         <div className="brand-text">
           <div className="brand-name">
-            CampusFix <span className="brand-badge">{isAdmin ? 'ADMIN' : 'PRO'}</span>
+            Fixora <span className="brand-badge">{isAdmin ? 'ADMIN' : 'PRO'}</span>
           </div>
           <p className="brand-tagline">Report it. Track it. Fix it.</p>
         </div>
