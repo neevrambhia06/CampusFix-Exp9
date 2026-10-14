@@ -1,162 +1,170 @@
-# Experiment 9 — CampusFix: Spring Boot Backend + Docker + Render Deployment
+# Experiment 9 — CampusFix Full-Stack System
+### Spring Boot REST API + React 19 Frontend + Docker + Render Deployment + Admin Portal
 
-## 📋 Overview
+---
 
-This experiment takes the existing **CampusFix** React frontend (from Experiment 4) and replaces the Express.js/JSON Server backend with a production-ready **Spring Boot REST API** backend, containerized with **Docker** and deployed to **Render**.
+## 👨‍🏫 Professor Viva & Code Walkthrough Cheat Sheet
+*If your professor asks: "Which code is where and how does it work?", use this quick reference table:*
 
-## 🏗️ Project Structure
+| Professor's Question | Exact File Path | What to Explain |
+| :--- | :--- | :--- |
+| **"Where is the Spring Boot Backend Entry Point?"** | `backend/src/main/java/com/campusfix/CampusFixApplication.java` | Main class with `@SpringBootApplication` that boots Spring Boot and embedded Tomcat server on port 8080. |
+| **"Where are your REST API endpoints defined?"** | `backend/src/main/java/com/campusfix/controller/IssueController.java` | `@RestController` handling `GET /api/issues`, `POST /api/issues`, `PUT /api/issues/{id}`, `DELETE /api/issues/{id}`, `GET /api/health`. |
+| **"Where is the Admin Login authentication endpoint?"** | `backend/src/main/java/com/campusfix/controller/AuthController.java` | `@PostMapping("/api/auth/login")` validating `admin` / `admin` and returning a signed session token. |
+| **"Where is the Database Entity / Table Schema?"** | `backend/src/main/java/com/campusfix/model/Issue.java` | `@Entity` mapped to `@Table(name = "issues")` with `@Id`, `@GeneratedValue`, columns for title, category, priority, status, reporter. |
+| **"Where are the Database Queries / ORM?"** | `backend/src/main/java/com/campusfix/repository/IssueRepository.java` | Interface extending `JpaRepository<Issue, Long>` providing zero-boilerplate SQL CRUD (`findAll`, `save`, `findById`, `deleteById`). |
+| **"Where is the Business Logic?"** | `backend/src/main/java/com/campusfix/service/IssueService.java` | `@Service` layer performing validation, updating fields, and communicating with `IssueRepository`. |
+| **"Where is CORS configured?"** | `backend/src/main/java/com/campusfix/config/CorsConfig.java` | `WebMvcConfigurer` allowing cross-origin calls from local React (`http://localhost:5173`) and deployed Render frontend. |
+| **"Where is the Initial Database Seeder?"** | `backend/src/main/java/com/campusfix/config/DataSeeder.java` | `CommandLineRunner` that automatically seeds 6 sample campus maintenance issues on startup if the DB is empty. |
+| **"Where are Backend Environment Variables configured?"** | `backend/src/main/resources/application.properties` | Configures `${PORT:8080}`, `${DATABASE_URL}` (PostgreSQL/H2), JPA dialect, and hibernate auto-DDL. |
+| **"Where is Docker defined?"** | `backend/Dockerfile` | Multi-stage Docker build: Stage 1 builds Maven JAR (`eclipse-temurin:21-jdk`); Stage 2 runs minimal JRE (`eclipse-temurin:21-jre`) with dynamic `$PORT`. |
+| **"Where does React call the Backend API?"** | `frontend/src/services/issueService.js` | Uses modern `fetch()` with `import.meta.env.VITE_API_URL` fallback, sending GET, POST, PUT, PATCH, DELETE requests. |
+| **"Where is Global React State managed?"** | `frontend/src/context/CampusFixContext.jsx` | React Context API (`CampusFixProvider` & `useCampusFix`) storing `issues`, `currentUser`, `isAdmin`, `stats`, `login()`, `logout()`. |
+| **"Where are the React Routes defined?"** | `frontend/src/App.jsx` | `react-router-dom` `<Routes>` mapping `/dashboard`, `/issues`, `/report`, `/admin`, `/login`. |
+| **"Where is the Admin Login UI?"** | `frontend/src/pages/AdminLogin.jsx` | Login form with `admin` / `admin` quick-fill demo button, form validation, and redirect. |
+| **"Where is the Admin Dashboard UI?"** | `frontend/src/pages/AdminDashboard.jsx` | Super Admin control center with live KPI metric cards, interactive status changers (`Reported` ➔ `In Progress` ➔ `Resolved`), and ticket deletion. |
+| **"Where is the Layout & Navigation?"** | `frontend/src/components/layout/` | Modular layout: `Sidebar.jsx`, `TopBar.jsx`, `AppShell.jsx`, `MobileNav.jsx`. |
+
+---
+
+## 🏗️ 3-Tier Enterprise Architecture
 
 ```
+[ BROWSER / CLIENT ]
+       │
+       ▼
+[ REACT 19 FRONTEND ] ──── (frontend/src/services/issueService.js)
+       │ HTTP REST Calls (GET, POST, PUT, DELETE) via VITE_API_URL
+       ▼
+[ SPRING BOOT 3.2.5 BACKEND ]
+  ├── 1. Controller Layer: (IssueController.java, AuthController.java)
+  ├── 2. Service Layer:    (IssueService.java)
+  ├── 3. Data Access Layer:(IssueRepository.java)
+       │
+       ▼
+[ DATABASE ] ──────────── (H2 in dev, PostgreSQL on Render production)
+```
+
+---
+
+## 📁 Complete Project Directory Tree
+
+```text
 Exp 9/
-├── frontend/              # Copied CampusFix React project from Exp 4
-│   ├── src/
-│   │   ├── services/
-│   │   │   └── issueService.js   # Updated to use Spring Boot API
-│   │   ├── context/
-│   │   │   └── CampusFixContext.jsx
-│   │   ├── components/
-│   │   ├── pages/
-│   │   └── ...
-│   ├── .env                # VITE_API_URL configuration
-│   ├── package.json
-│   └── vite.config.js
 │
-├── backend/               # Spring Boot REST API
-│   ├── src/
-│   │   └── main/
-│   │       ├── java/com/campusfix/
-│   │       │   ├── CampusFixApplication.java
-│   │       │   ├── controller/
-│   │       │   │   └── IssueController.java
-│   │       │   ├── model/
-│   │       │   │   └── Issue.java
-│   │       │   ├── repository/
-│   │       │   │   └── IssueRepository.java
-│   │       │   ├── service/
-│   │       │   │   └── IssueService.java
-│   │       │   └── config/
-│   │       │       ├── CorsConfig.java
-│   │       │       └── DataSeeder.java
-│   │       └── resources/
-│   │           └── application.properties
-│   ├── pom.xml
-│   ├── Dockerfile
-│   ├── mvnw / mvnw.cmd
-│   └── .mvn/
+├── backend/                                   # 🍃 Spring Boot REST Backend
+│   ├── Dockerfile                             # Multi-stage Docker container build
+│   ├── pom.xml                                # Maven project object model & dependencies
+│   ├── mvnw / mvnw.cmd                        # Maven wrapper binaries (no local install needed)
+│   ├── .mvn/                                  # Maven wrapper configurations
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/campusfix/
+│       │   │   ├── CampusFixApplication.java  # Main executable Spring Boot entry
+│       │   │   ├── config/
+│       │   │   │   ├── CorsConfig.java        # Cross-Origin Resource Sharing security policy
+│       │   │   │   └── DataSeeder.java        # Initial DB seed records
+│       │   │   ├── controller/
+│       │   │   │   ├── AuthController.java    # Admin login verification endpoint
+│       │   │   │   └── IssueController.java   # Full CRUD REST endpoints (/api/issues)
+│       │   │   ├── model/
+│       │   │   │   └── Issue.java             # JPA Entity mapping to relational DB
+│       │   │   ├── repository/
+│       │   │   │   └── IssueRepository.java   # Spring Data JPA database interface
+│       │   │   └── service/
+│       │   │       └── IssueService.java      # Business logic & repository coordinator
+│       │   └── resources/
+│       │       └── application.properties     # Port, DB, and Hibernate configuration
+│       └── test/                              # Backend automated test suite
 │
-├── .gitignore
-└── README.md
+├── frontend/                                  # ⚛️ React 19 + Vite Frontend
+│   ├── index.html                             # Single page HTML entry
+│   ├── package.json                           # React dependencies & scripts
+│   ├── vite.config.js                         # Vite build system configuration
+│   ├── .env                                   # VITE_API_URL configuration
+│   └── src/
+│       ├── main.jsx                           # React DOM root render
+│       ├── App.jsx                            # Route table and app structure
+│       ├── index.css                          # CampusFix SaaS design tokens
+│       ├── context/
+│       │   └── CampusFixContext.jsx           # Global state (issues, auth, active filters)
+│       ├── services/
+│       │   └── issueService.js                # Centralized REST API fetch calls
+│       ├── pages/
+│       │   ├── AdminDashboard.jsx             # Super Admin control center
+│       │   ├── AdminLogin.jsx                 # Admin login portal (admin / admin)
+│       │   ├── Dashboard.jsx                  # Student overview metrics
+│       │   ├── Issues.jsx                     # Ticket directory & grid
+│       │   ├── IssueDetails.jsx               # Single ticket inspection
+│       │   ├── ReportIssue.jsx                # Ticket submission form
+│       │   ├── MyReports.jsx                  # Student personal ticket history
+│       │   ├── Analytics.jsx                  # Campus maintenance charts
+│       │   ├── Announcements.jsx              # Directorate announcements
+│       │   ├── Help.jsx                       # Support & FAQ desk
+│       │   └── MaintenanceTeam.jsx            # On-duty personnel roster
+│       ├── components/
+│       │   ├── layout/                        # Sidebar, TopBar, AppShell, MobileNav
+│       │   ├── common/                        # Button, Badge, LoadingState, ErrorState
+│       │   ├── issues/                        # IssueCard, IssueGrid, IssueRow
+│       │   └── dashboard/                     # StatCard, MaintenanceHealth
+│       └── data/
+│           └── mockData.js                    # Offline fallback dataset
+│
+├── .gitignore                                 # Git exclusions (target, node_modules, etc.)
+└── README.md                                  # Complete architecture & viva guide
 ```
 
-## 🔧 Tech Stack
+---
 
-| Layer      | Technology                          |
-|------------|-------------------------------------|
-| Frontend   | React 19, Vite 8, Tailwind CSS 4   |
-| Backend    | Spring Boot 3.2, Spring Data JPA   |
-| Database   | H2 (dev), PostgreSQL (production)   |
-| Build      | Maven 3.9.6 (via wrapper)          |
-| Container  | Docker (multi-stage build)          |
-| Deployment | Render (Web Service)                |
-| Language   | Java 21 (Temurin)                   |
+## 🔐 Credentials & Authentication
+- **Role**: Super Admin
+- **Username**: `admin`
+- **Password**: `admin`
+- **Portal URL**: `/login` (or click "Admin Login" in Sidebar)
+- **Admin Features**:
+  1. Live KPI cards (Reported, In Progress, Resolved)
+  2. One-click Status Changer dropdown directly updating backend DB
+  3. Delete invalid or duplicate tickets
+  4. System health diagnostics
 
-## 🚀 API Endpoints
+---
 
-| Method   | Endpoint            | Description                    |
-|----------|---------------------|--------------------------------|
-| `GET`    | `/api/health`       | Health check                   |
-| `GET`    | `/api/issues`       | Fetch all issues               |
-| `GET`    | `/api/issues/{id}`  | Fetch single issue by ID       |
-| `POST`   | `/api/issues`       | Create a new issue             |
-| `PUT`    | `/api/issues/{id}`  | Replace an entire issue        |
-| `PATCH`  | `/api/issues/{id}`  | Partially update an issue      |
-| `DELETE` | `/api/issues/{id}`  | Delete an issue                |
+## 🚀 REST API Reference
 
-### Issue Schema
+| HTTP Method | Endpoint | Request Body | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/health` | None | Returns JSON confirming backend is `UP` |
+| `POST` | `/api/auth/login` | `{"username":"admin","password":"admin"}` | Validates admin and issues token |
+| `GET` | `/api/issues` | None | Retrieves all issues from the database |
+| `GET` | `/api/issues/{id}`| None | Retrieves issue details by primary key |
+| `POST` | `/api/issues` | JSON Issue object | Creates a new issue in database |
+| `PUT` | `/api/issues/{id}`| JSON Issue object | Replaces entire issue entity |
+| `PATCH` | `/api/issues/{id}`| Partial JSON fields | Partially updates issue (e.g. status) |
+| `DELETE` | `/api/issues/{id}`| None | Deletes issue by ID |
 
-```json
-{
-  "id": 1,
-  "title": "Water Leakage in Lab 302",
-  "category": "Plumbing",
-  "location": "Academic Block B - 3rd Floor",
-  "priority": "High",
-  "status": "In Progress",
-  "reporter": "Aarav Shah",
-  "description": "Continuous water dripping near the AC pipeline..."
-}
-```
+---
 
-## 🏃 Running Locally
+## 🏃 Running the Application
 
-### 1. Start the Spring Boot Backend
-
+### 1. Run Spring Boot Backend
 ```bash
 cd backend
-
-# Set JAVA_HOME if needed (Windows example)
-set JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot
-
-# Build
-mvnw.cmd clean package -DskipTests
-
-# Run
+./mvnw clean package -DskipTests
 java -jar target/campusfix-backend.jar
 ```
+*Backend runs on `http://localhost:8080`.*
 
-Backend starts at: `http://localhost:8080`
-
-Verify: `http://localhost:8080/api/health`
-
-### 2. Start the React Frontend
-
+### 2. Run React Frontend
 ```bash
 cd frontend
-
 npm install
 npm run dev
 ```
+*Frontend runs on `http://localhost:5173`.*
 
-Frontend starts at: `http://localhost:5173`
+---
 
-## 🐳 Docker
-
-### Build
-
-```bash
-cd backend
-docker build -t campusfix-backend .
-```
-
-### Run
-
-```bash
-docker run -p 8080:8080 -e PORT=8080 campusfix-backend
-```
-
-## ☁️ Render Deployment
-
-1. Push the `Exp 9` project to GitHub
-2. Create a new **Web Service** on Render
-3. Set **Root Directory** to `backend`
-4. Set **Runtime** to Docker
-5. Add environment variables:
-   - `PORT` → set by Render automatically
-   - `CORS_ORIGINS` → your frontend URL (e.g., `https://campusfix.onrender.com`)
-   - `DATABASE_URL` → PostgreSQL connection string (if using Render PostgreSQL)
-   - `DB_DRIVER` → `org.postgresql.Driver` (for PostgreSQL)
-
-## 🔗 Connecting Frontend to Deployed Backend
-
-Update `frontend/.env`:
-
-```env
-VITE_API_URL=https://YOUR-RENDER-BACKEND-URL/api
-```
-
-## 📌 Important Notes
-
-- **Exp 4 is NOT modified** — it remains the original React project
-- The frontend in `Exp 9/frontend` is a **copy** with only the API URL changed
-- Database credentials are kept in environment variables, never in source code
-- The H2 in-memory database is used for local development; PostgreSQL for production
+## ☁️ Live Cloud Deployment Details
+- **Backend Service (Render)**: `https://campusfix-backend-ceqd.onrender.com`
+- **Backend Health Check**: `https://campusfix-backend-ceqd.onrender.com/api/health`
+- **GitHub Repository**: `https://github.com/neevrambhia06/CampusFix-Exp9`
