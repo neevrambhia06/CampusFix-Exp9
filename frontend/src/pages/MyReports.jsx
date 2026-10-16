@@ -14,13 +14,10 @@ export function MyReports(props) {
 
   const userName = (user?.name || '').toLowerCase();
   const myIssues = issues.filter((i) => {
+    if (!user) return false;
     const rep = (i.reporter || i.reportedBy || '').toLowerCase();
     if (!rep) return false;
-    if (userName && (rep === userName || rep.includes(userName) || userName.includes(rep))) {
-      return true;
-    }
-    // Default fallback if initial student
-    return userName.includes('aarav') && rep.includes('aarav');
+    return userName && (rep === userName || rep.includes(userName) || userName.includes(rep));
   });
 
   const total = myIssues.length;
@@ -28,11 +25,35 @@ export function MyReports(props) {
   const inProgress = myIssues.filter((i) => i.status === 'In Progress').length;
   const resolved = myIssues.filter((i) => i.status === 'Resolved').length;
 
+  if (!user) {
+    return (
+      <div className="my-reports-page space-y">
+        <PageHeader
+          title="My Reported Tickets"
+          subtitle="Track the real-time progress and technician status for issues you have logged."
+        />
+        <EmptyState
+          icon={FileText}
+          title="Sign In to Track Your Tickets"
+          description="You are currently in guest mode. Please sign in or register your student profile to view and track your personal maintenance requests."
+          action={
+            <button
+              onClick={() => navigate('/login')}
+              className="btn btn-primary"
+            >
+              Sign In to Fixora
+            </button>
+          }
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="my-reports-page space-y">
       <PageHeader
         title="My Reported Tickets"
-        subtitle={`Track the progress and updates for issues logged by ${user ? user.name : 'you'}.`}
+        subtitle={`Track the progress and updates for issues logged by ${user.name}.`}
         action={
           <button
             onClick={() => navigate('/report')}
@@ -67,7 +88,7 @@ export function MyReports(props) {
         <EmptyState
           icon={FileText}
           title="No Reports Submitted Yet"
-          description="You haven't logged any campus maintenance tickets yet."
+          description={`You haven't logged any campus maintenance tickets yet under ${user.name}.`}
           action={
             <button
               onClick={() => navigate('/report')}

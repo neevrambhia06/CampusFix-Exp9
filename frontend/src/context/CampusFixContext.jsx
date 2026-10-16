@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { user as initialUser, mockIssues } from '../data/mockData';
 import { 
   getIssues, 
   getIssue, 
@@ -20,9 +19,9 @@ export function CampusFixProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem('campusfix_user');
-      return saved ? JSON.parse(saved) : initialUser;
+      return saved ? JSON.parse(saved) : null;
     } catch {
-      return initialUser;
+      return null;
     }
   });
   const [selectedIssue, setSelectedIssue] = useState(null);
@@ -41,20 +40,114 @@ export function CampusFixProvider({ children }) {
   // Admin status helper
   const isAdmin = useMemo(() => currentUser?.role === 'Admin', [currentUser]);
 
-  // Auth actions
-  const login = async (username, password) => {
-    const res = await loginAdmin(username, password);
+  // Retrieve registered user accounts from localStorage
+  const getRegisteredUsers = () => {
+    try {
+      const saved = localStorage.getItem('campusfix_registered_users');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  // Auth Action: Standard Login (Checks local registered users first, then API)
+  const login = async (identifier, password) => {
+    const cleanId = (identifier || '').trim().toLowerCase();
+    const cleanPass = (password || '').trim();
+
+    // 1. Check local registered student/staff directory
+    const registeredUsers = getRegisteredUsers();
+    const matched = registeredUsers.find(
+      (u) =>
+        (u.email?.toLowerCase() === cleanId ||
+          u.rollNo?.toLowerCase() === cleanId ||
+          u.username?.toLowerCase() === cleanId) &&
+        u.password === cleanPass
+    );
+
+    if (matched) {
+      const sessionUser = { ...matched };
+      delete sessionUser.password;
+      setCurrentUser(sessionUser);
+      localStorage.setItem('campusfix_user', JSON.stringify(sessionUser));
+      localStorage.setItem('campusfix_token', `usr_${Date.now()}`);
+      return sessionUser;
+    }
+
+    // 2. Authenticate against Spring Boot API database
+    const res = await loginAdmin(identifier, password);
     if (res && res.user) {
       setCurrentUser(res.user);
       localStorage.setItem('campusfix_user', JSON.stringify(res.user));
       if (res.token) localStorage.setItem('campusfix_token', res.token);
       return res.user;
     }
-    throw new Error('Login failed: invalid response from server');
+    throw new Error('Authentication failed: Invalid credentials.');
+  };
+
+  // Auth Action: Register genuine student or staff member
+  const register = async (userData) => {
+    const registeredUsers = getRegisteredUsers();
+
+    const exists = registeredUsers.some(
+      (u) =>
+        u.email?.toLowerCase() === userData.email.trim().toLowerCase() ||
+        (userData.rollNo && u.rollNo?.toLowerCase() === userData.rollNo.trim().toLowerCase())
+    );
+
+    if (exists) {
+      throw new Error('An account with this institutional email or roll number already exists.');
+    }
+
+    const newUser = {
+      id: userData.rollNo ? userData.rollNo.trim().toUpperCase() : `STU-${Date.now().toString().slice(-4)}`,
+      name: userData.name.trim(),
+      email: userData.email.trim().toLowerCase(),
+      rollNo: userData.rollNo ? userData.rollNo.trim().toUpperCase() : '',
+      department: userData.department || 'Computer Science & Engg.',
+      role: userData.role || 'Student',
+      avatar: userData.avatar || userData.name.trim().charAt(0).toUpperCase(),
+      authProvider: 'credentials',
+      password: userData.password,
+      createdAt: new Date().toISOString(),
+    };
+
+    registeredUsers.push(newUser);
+    localStorage.setItem('campusfix_registered_users', JSON.stringify(registeredUsers));
+
+    const sessionUser = { ...newUser };
+    delete sessionUser.password;
+    setCurrentUser(sessionUser);
+    localStorage.setItem('campusfix_user', JSON.stringify(sessionUser));
+    localStorage.setItem('campusfix_token', `stu_${Date.now()}`);
+
+    return sessionUser;
+  };
+
+  // Auth Action: Authenticate with Google
+  const loginWithGoogle = async (googleData) => {
+    const sessionUser = {
+      id: googleData.rollNo ? googleData.rollNo.trim().toUpperCase() : `GGL-${Date.now().toString().slice(-4)}`,
+      name: googleData.name.trim(),
+      email: googleData.email.trim().toLowerCase(),
+      rollNo: googleData.rollNo ? googleData.rollNo.trim().toUpperCase() : 'G-VERIFIED',
+      department: googleData.department || 'Computer Science & Engg.',
+      role: googleData.role || 'Student',
+      avatar: googleData.picture || googleData.name.trim().charAt(0).toUpperCase(),
+      authProvider: 'google',
+      verified: true,
+      lastLogin: new Date().toISOString(),
+    };
+
+    setCurrentUser(sessionUser);
+    localStorage.setItem('campusfix_user', JSON.stringify(sessionUser));
+    localStorage.setItem('campusfix_token', `ggl_${Date.now()}`);
+
+    return sessionUser;
   };
 
   const logout = () => {
-    setCurrentUser(initialUser);
+    setCurrentUser(null);
     localStorage.removeItem('campusfix_user');
     localStorage.removeItem('campusfix_token');
   };
@@ -222,6 +315,9 @@ export function CampusFixProvider({ children }) {
 
     // Actions & Setters
     login,
+    register,
+    loginWithGoogle,
+    getRegisteredUsers,
     logout,
     loadIssues,
     addIssue,
@@ -232,6 +328,7 @@ export function CampusFixProvider({ children }) {
     setSearchTerm,
     setSelectedCategory,
     setSelectedPriority,
+    setSelectedStatus,
     setDataSource: () => {},
   };
 

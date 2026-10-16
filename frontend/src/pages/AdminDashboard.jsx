@@ -507,7 +507,7 @@ export function AdminDashboard() {
             fontSize: '0.8rem' 
           }}
         >
-          <span>Switch to Student Directory</span>
+          <span>View Public Ticket Tracker</span>
           <ExternalLink size={13} />
         </Link>
       </div>

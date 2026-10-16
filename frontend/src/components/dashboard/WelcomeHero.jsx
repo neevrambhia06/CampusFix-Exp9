@@ -14,10 +14,12 @@ export function WelcomeHero(props) {
           <span>Campus Maintenance Portal</span>
         </div>
         <h1 className="welcome-title">
-          Good morning, {user ? user.name.split(' ')[0] : 'Aarav'}.
+          {user ? `Good day, ${user.name.split(' ')[0]}.` : 'Welcome to Fixora Campus Hub.'}
         </h1>
         <p className="welcome-subtitle">
-          Here's what's happening across your campus today. Report issues, track live repairs, and check maintenance schedules.
+          {user 
+            ? "Here's what's happening across your campus today. Report issues, track live repairs, and check maintenance schedules."
+            : "Explore active maintenance requests, review live campus facilities status, or sign in to track your personal tickets."}
         </p>
 
         <div className="welcome-actions">

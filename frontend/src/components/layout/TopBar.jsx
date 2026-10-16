@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { Search, Bell, CheckCircle2, AlertCircle, Info, ShieldCheck, Lock, LogOut } from 'lucide-react';
+import { Search, Bell, CheckCircle2, AlertCircle, Info, ShieldCheck, Lock, LogOut, LogIn, User } from 'lucide-react';
 
 export function TopBar(props) {
   const { user, isAdmin, onLogout, searchTerm, onSearchChange } = props;
@@ -118,93 +118,121 @@ export function TopBar(props) {
           )}
         </div>
 
-        {/* User Avatar & Dropdown */}
-        <div className="topbar-dropdown-wrapper">
-          <div
-            onClick={() => {
-              setShowProfileMenu(!showProfileMenu);
-              setShowNotifications(false);
-            }}
-            className="topbar-user-pill"
-            style={{
-              borderColor: isAdmin ? 'var(--primary)' : undefined,
-              backgroundColor: isAdmin ? 'var(--primary-light)' : undefined
-            }}
-          >
-            <div className="user-avatar-small" style={{ backgroundColor: isAdmin ? 'var(--primary)' : undefined, color: isAdmin ? '#fff' : undefined }}>
-              {user ? user.avatar || user.name.charAt(0) : 'A'}
-            </div>
-            <div className="user-pill-info">
-              <span className="pill-name">{user ? user.name : 'Aarav Shah'}</span>
-              <span className="pill-role" style={{ color: isAdmin ? 'var(--primary)' : undefined, fontWeight: isAdmin ? 700 : undefined }}>
-                {user ? user.role : 'Student'}
-              </span>
-            </div>
-          </div>
-
-          {showProfileMenu && (
-            <div className="topbar-dropdown-menu profile-menu">
-              <div className="dropdown-header">
-                <div className="user-display-name">{user ? user.name : 'Aarav Shah'}</div>
-                <div className="user-display-role">{user ? user.email || 'aarav.shah@campus.edu' : ''}</div>
+        {/* User Avatar & Dropdown / Guest Sign In */}
+        {user ? (
+          <div className="topbar-dropdown-wrapper">
+            <div
+              onClick={() => {
+                setShowProfileMenu(!showProfileMenu);
+                setShowNotifications(false);
+              }}
+              className="topbar-user-pill"
+              style={{
+                borderColor: isAdmin ? 'var(--primary)' : undefined,
+                backgroundColor: isAdmin ? 'var(--primary-light)' : undefined,
+                cursor: 'pointer'
+              }}
+            >
+              <div className="user-avatar-small" style={{ backgroundColor: isAdmin ? 'var(--primary)' : undefined, color: isAdmin ? '#fff' : undefined }}>
+                {user.avatar && user.avatar.length <= 2 ? user.avatar : (user.name ? user.name.charAt(0).toUpperCase() : 'U')}
               </div>
-              <ul className="profile-menu-links">
-                {isAdmin ? (
-                  <>
-                    <li>
-                      <Link to="/admin" onClick={() => setShowProfileMenu(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 600 }}>
-                        <ShieldCheck size={16} />
-                        <span>Admin Dashboard</span>
-                      </Link>
-                    </li>
-                    <li><Link to="/issues" onClick={() => setShowProfileMenu(false)}>View All Issues</Link></li>
-                    <li><Link to="/analytics" onClick={() => setShowProfileMenu(false)}>System Analytics</Link></li>
-                    <li style={{ borderTop: '1px solid var(--border-light)', marginTop: '4px', paddingTop: '4px' }}>
-                      <button
-                        onClick={() => {
-                          setShowProfileMenu(false);
-                          if (onLogout) onLogout();
-                          navigate('/dashboard');
-                        }}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#DC2626',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          width: '100%',
-                          padding: '0.5rem 0',
-                          cursor: 'pointer',
-                          fontSize: '0.85rem'
-                        }}
-                      >
-                        <LogOut size={16} />
-                        <span>Log Out of Admin</span>
-                      </button>
-                    </li>
-                  </>
-                ) : (
-                  <>
-                    <li><Link to="/my-reports" onClick={() => setShowProfileMenu(false)}>My Reports & Tickets</Link></li>
-                    <li><Link to="/report" onClick={() => setShowProfileMenu(false)}>Report New Issue</Link></li>
-                    <li><Link to="/help" onClick={() => setShowProfileMenu(false)}>Help & Support</Link></li>
-                    <li style={{ borderTop: '1px solid var(--border-light)', marginTop: '4px', paddingTop: '4px' }}>
-                      <Link 
-                        to="/login" 
-                        onClick={() => setShowProfileMenu(false)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 600 }}
-                      >
-                        <Lock size={16} />
-                        <span>Portal Login / Switch Role</span>
-                      </Link>
-                    </li>
-                  </>
-                )}
-              </ul>
+              <div className="user-pill-info">
+                <span className="pill-name">{user.name}</span>
+                <span className="pill-role" style={{ color: isAdmin ? 'var(--primary)' : undefined, fontWeight: isAdmin ? 700 : undefined }}>
+                  {user.role}
+                </span>
+              </div>
             </div>
-          )}
-        </div>
+
+            {showProfileMenu && (
+              <div className="topbar-dropdown-menu profile-menu">
+                <div className="dropdown-header">
+                  <div className="user-display-name">{user.name}</div>
+                  <div className="user-display-role">{user.email || user.rollNo || `${user.role} Account`}</div>
+                  {user.department && (
+                    <div style={{ fontSize: '0.725rem', color: '#64748B', marginTop: '2px' }}>
+                      {user.department}
+                    </div>
+                  )}
+                  {user.authProvider === 'google' && (
+                    <div style={{ fontSize: '0.675rem', color: '#047857', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                      <span>✓ Google Verified</span>
+                    </div>
+                  )}
+                </div>
+                <ul className="profile-menu-links">
+                  {isAdmin ? (
+                    <>
+                      <li>
+                        <Link to="/admin" onClick={() => setShowProfileMenu(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 600 }}>
+                          <ShieldCheck size={16} />
+                          <span>Admin Control Center</span>
+                        </Link>
+                      </li>
+                      <li><Link to="/issues" onClick={() => setShowProfileMenu(false)}>View All Issues</Link></li>
+                      <li><Link to="/analytics" onClick={() => setShowProfileMenu(false)}>System Analytics</Link></li>
+                    </>
+                  ) : (
+                    <>
+                      <li><Link to="/my-reports" onClick={() => setShowProfileMenu(false)}>My Reports & Tickets</Link></li>
+                      <li><Link to="/report" onClick={() => setShowProfileMenu(false)}>Report New Issue</Link></li>
+                      <li><Link to="/help" onClick={() => setShowProfileMenu(false)}>Help & Support</Link></li>
+                      <li>
+                        <Link to="/login" onClick={() => setShowProfileMenu(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 500 }}>
+                          <User size={15} />
+                          <span>Account Settings & Profile</span>
+                        </Link>
+                      </li>
+                    </>
+                  )}
+                  <li style={{ borderTop: '1px solid var(--border-light)', marginTop: '4px', paddingTop: '4px' }}>
+                    <button
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        if (onLogout) onLogout();
+                        navigate('/dashboard');
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#DC2626',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        width: '100%',
+                        padding: '0.5rem 0',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        fontWeight: 600
+                      }}
+                    >
+                      <LogOut size={16} />
+                      <span>Sign Out</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Link
+              to="/login"
+              className="btn btn-primary"
+              style={{
+                padding: '0.45rem 0.95rem',
+                fontSize: '0.825rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                borderRadius: '8px'
+              }}
+            >
+              <LogIn size={15} />
+              <span>Sign In</span>
+            </Link>
+          </div>
+        )}
 
       </div>
     </header>

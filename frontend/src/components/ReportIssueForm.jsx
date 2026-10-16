@@ -11,7 +11,7 @@ export function ReportIssueForm({ onSuccessReturn }) {
     category: 'Plumbing',
     location: '',
     priority: 'Medium',
-    reportedBy: currentUser ? currentUser.name : 'Aarav Shah',
+    reportedBy: currentUser ? currentUser.name : '',
     description: '',
   });
 
@@ -33,7 +33,7 @@ export function ReportIssueForm({ onSuccessReturn }) {
 
   // Update reportedBy if currentUser changes
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && currentUser.name) {
       setFormData((prev) => ({ ...prev, reportedBy: currentUser.name }));
     }
   }, [currentUser]);
@@ -121,7 +121,7 @@ export function ReportIssueForm({ onSuccessReturn }) {
         category: 'Plumbing',
         location: '',
         priority: 'Medium',
-        reportedBy: currentUser ? currentUser.name : 'Aarav Shah',
+        reportedBy: currentUser ? currentUser.name : '',
         description: '',
       });
       setErrors({});
@@ -326,12 +326,21 @@ export function ReportIssueForm({ onSuccessReturn }) {
                 id="issue-reportedBy"
                 name="reportedBy"
                 type="text"
+                placeholder="Enter your full name (e.g. Aarav Sharma)"
                 value={formData.reportedBy}
                 onChange={handleChange}
                 className={`form-input-saas ${errors.reportedBy ? 'input-error' : ''}`}
               />
-              {errors.reportedBy && (
+              {errors.reportedBy ? (
                 <span className="field-error-message">{errors.reportedBy}</span>
+              ) : currentUser ? (
+                <span className="form-helper" style={{ color: '#047857' }}>
+                  ✓ Associated with signed-in profile: {currentUser.name} ({currentUser.role}{currentUser.rollNo ? ` · ${currentUser.rollNo}` : ''})
+                </span>
+              ) : (
+                <span className="form-helper">
+                  Provide your full name for maintenance status and work order tracking.
+                </span>
               )}
             </div>
           </div>

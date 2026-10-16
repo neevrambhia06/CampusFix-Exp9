@@ -10,8 +10,9 @@ import {
   BarChart3, 
   Wrench,
   ShieldCheck,
-  Lock,
-  LogOut
+  LogOut,
+  LogIn,
+  UserCheck
 } from 'lucide-react';
 
 export function Sidebar(props) {
@@ -132,10 +133,15 @@ export function Sidebar(props) {
                   <ShieldCheck size={18} className="nav-icon" style={{ color: 'var(--primary)' }} />
                   <span>Admin Control</span>
                 </>
+              ) : user ? (
+                <>
+                  <UserCheck size={18} className="nav-icon" style={{ color: 'var(--primary)' }} />
+                  <span>My Account</span>
+                </>
               ) : (
                 <>
-                  <Lock size={18} className="nav-icon" style={{ color: 'var(--accent-amber)' }} />
-                  <span>Portal Login</span>
+                  <LogIn size={18} className="nav-icon" style={{ color: 'var(--primary)' }} />
+                  <span>Sign In</span>
                 </>
               )}
             </NavLink>
@@ -144,28 +150,28 @@ export function Sidebar(props) {
       </nav>
 
       {/* Sidebar Footer User Profile */}
-      <div className="sidebar-user-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-          <div className="user-avatar-circle" style={{ backgroundColor: isAdmin ? 'var(--primary)' : undefined, color: isAdmin ? '#fff' : undefined }}>
-            {user ? (user.avatar || user.name.charAt(0)) : 'A'}
-          </div>
-          <div className="user-details" style={{ minWidth: 0 }}>
-            <div className="user-display-name" style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-              {user ? user.name : 'Aarav Shah'}
+      {user ? (
+        <div className="sidebar-user-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <div className="user-avatar-circle" style={{ backgroundColor: isAdmin ? 'var(--primary)' : undefined, color: isAdmin ? '#fff' : undefined }}>
+              {user.avatar && user.avatar.length <= 2 ? user.avatar : (user.name ? user.name.charAt(0).toUpperCase() : 'U')}
             </div>
-            <div className="user-display-role" style={{ color: isAdmin ? 'var(--primary)' : undefined, fontWeight: isAdmin ? 600 : undefined }}>
-              {user ? user.role : 'Student'}
+            <div className="user-details" style={{ minWidth: 0 }}>
+              <div className="user-display-name" style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={user.name}>
+                {user.name}
+              </div>
+              <div className="user-display-role" style={{ color: isAdmin ? 'var(--primary)' : undefined, fontWeight: isAdmin ? 600 : undefined }}>
+                {user.role}
+              </div>
             </div>
           </div>
-        </div>
 
-        {isAdmin && (
           <button
             onClick={() => {
               if (onLogout) onLogout();
               navigate('/dashboard');
             }}
-            title="Log out of Admin"
+            title="Sign out"
             style={{
               background: 'none',
               border: 'none',
@@ -175,12 +181,39 @@ export function Sidebar(props) {
               borderRadius: '6px',
               display: 'flex',
               alignItems: 'center',
+              transition: 'color 0.15s ease'
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#DC2626'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
           >
             <LogOut size={16} />
           </button>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="sidebar-user-footer" style={{ padding: '0.75rem 1rem' }}>
+          <Link
+            to="/login"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              width: '100%',
+              padding: '0.55rem 0.75rem',
+              backgroundColor: 'var(--primary)',
+              color: '#ffffff',
+              borderRadius: '8px',
+              fontSize: '0.825rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+              transition: 'opacity 0.15s ease'
+            }}
+          >
+            <LogIn size={15} />
+            <span>Sign In to Fixora</span>
+          </Link>
+        </div>
+      )}
     </aside>
   );
 }

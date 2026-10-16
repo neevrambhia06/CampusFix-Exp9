@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import MobileNav from './MobileNav';
@@ -12,18 +13,17 @@ export function AppShell(props) {
   } = props;
 
   const { currentUser, isAdmin, logout } = useCampusFix();
-  const activeUser = currentUser || { name: 'Aarav Shah', role: 'Student' };
 
   return (
     <div className="app-shell">
       {/* Desktop Fixed Left Sidebar */}
-      <Sidebar user={activeUser} isAdmin={isAdmin} onLogout={logout} />
+      <Sidebar user={currentUser} isAdmin={isAdmin} onLogout={logout} />
 
       {/* Main Content Area */}
       <div className="app-main-wrapper">
         {/* Sticky Top Header Bar */}
         <TopBar 
-          user={activeUser} 
+          user={currentUser} 
           isAdmin={isAdmin}
           onLogout={logout}
           searchTerm={searchTerm}
@@ -42,7 +42,11 @@ export function AppShell(props) {
               <strong>Fixora</strong> — Smart Campus Issue Reporting & Maintenance System
             </div>
             <div className="footer-right">
-              Active Session: <strong>{activeUser.name}</strong> ({activeUser.role})
+              {currentUser ? (
+                <>Active Session: <strong>{currentUser.name}</strong> ({currentUser.role})</>
+              ) : (
+                <>Guest Session · <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600 }}>Sign In</Link></>
+              )}
             </div>
           </div>
         </footer>
