@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   ListFilter, 
@@ -36,7 +36,7 @@ export function Sidebar(props) {
   return (
     <aside className="app-sidebar">
       {/* Brand Logo Header */}
-      <div className="sidebar-brand">
+      <Link to="/" className="sidebar-brand" style={{ textDecoration: 'none', color: 'inherit' }} title="Return to Fixora Landing Page">
         <div className="brand-logo-icon">
           <ShieldCheck size={20} className="brand-icon-svg" />
         </div>
@@ -46,7 +46,7 @@ export function Sidebar(props) {
           </div>
           <p className="brand-tagline">Report it. Track it. Fix it.</p>
         </div>
-      </div>
+      </Link>
 
       {/* Main Navigation List */}
       <nav className="sidebar-nav">

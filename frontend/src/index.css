@@ -1068,4 +1068,5 @@ h1, h2, h3, h4, h5, h6 {
   .topbar-shell { padding: 0 1rem; }
   .topbar-search { display: none; }
   .app-page-content { padding: 1.25rem 1rem; }
+  .hidden-mobile { display: none !important; }
 }

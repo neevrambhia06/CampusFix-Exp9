@@ -23,7 +23,7 @@ export function TopBar(props) {
     if (path === '/analytics') return 'Issue Distribution Analytics';
     if (path === '/maintenance-team') return 'Maintenance Personnel Roster';
     if (path === '/admin') return 'Administrator Control Center';
-    if (path === '/login') return 'Admin Portal Login';
+    if (path === '/login') return 'Campus Portal';
     return 'Fixora Workspace';
   };
 
@@ -58,7 +58,9 @@ export function TopBar(props) {
     <header className="topbar-shell">
       <div className="topbar-left">
         <div className="breadcrumb-path">
-          <span className="breadcrumb-root">Fixora</span>
+          <Link to="/" className="breadcrumb-root" style={{ textDecoration: 'none', color: 'inherit' }} title="Visit Fixora Home">
+            Fixora
+          </Link>
           <span className="breadcrumb-separator">/</span>
           <span className="breadcrumb-current">{getBreadcrumb()}</span>
         </div>
@@ -81,10 +83,10 @@ export function TopBar(props) {
         <button
           onClick={onToggleDataSource}
           className={`datasource-badge ${dataSource === 'api' ? 'api-mode' : 'mock-mode'}`}
-          title="Click to toggle between Spring Boot REST API and static mockData.js"
+          title="Toggle data source"
         >
           <span className="dot"></span>
-          <span>{dataSource === 'api' ? 'Spring Boot API' : 'Mock Data'}</span>
+          <span>{dataSource === 'api' ? 'Live API' : 'Offline Mode'}</span>
         </button>
 
         {/* Notification Bell Icon & Dropdown */}

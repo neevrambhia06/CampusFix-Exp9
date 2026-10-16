@@ -481,12 +481,12 @@ export function AdminDashboard() {
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Server size={15} style={{ color: '#004643' }} />
-            <span>Backend: <strong style={{ color: '#0F172A' }}>Spring Boot 3.2.5 (Render Live)</strong></span>
+            <span>Backend: <strong style={{ color: '#0F172A' }}>Production API (Cloud)</strong></span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Database size={15} style={{ color: '#004643' }} />
-            <span>Mode: <strong style={{ color: dataSource === 'api' ? '#047857' : '#B45309' }}>{dataSource === 'api' ? 'REST API Active' : 'Offline / Mock'}</strong></span>
+            <span>Mode: <strong style={{ color: dataSource === 'api' ? '#047857' : '#B45309' }}>{dataSource === 'api' ? 'Connected' : 'Offline'}</strong></span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

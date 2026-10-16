@@ -86,7 +86,7 @@ export async function loginUser(username, password) {
     console.warn('Backend auth unreachable, falling back to local verification:', err.message);
   }
 
-  // Fallback client validation & offline demo support
+  // Offline fallback authentication
   const cleanUser = (username || '').trim().toLowerCase();
   const cleanPass = (password || '').trim();
 

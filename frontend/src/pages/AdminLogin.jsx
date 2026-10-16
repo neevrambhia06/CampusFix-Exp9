@@ -637,10 +637,10 @@ export function AdminLogin() {
                 e.currentTarget.style.borderColor = '#CBD5E1';
                 e.currentTarget.style.color = '#334155';
               }}
-              title="One-click test authentication for lab demonstration"
+              title="Quick sign-in with preset credentials"
             >
               <Sparkles size={14} />
-              <span>Instant 1-Click Demo Login</span>
+              <span>Quick Sign In</span>
             </button>
 
           </form>
@@ -676,7 +676,7 @@ export function AdminLogin() {
           </Link>
 
           <span style={{ fontSize: '0.725rem', color: '#94A3B8' }}>
-            Fixora Auth · Experiment 9
+            Fixora · Secure Authentication
           </span>
         </div>
 

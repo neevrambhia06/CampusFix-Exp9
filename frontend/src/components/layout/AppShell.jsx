@@ -46,7 +46,7 @@ export function AppShell(props) {
               <strong>Fixora</strong> — Smart Campus Issue Reporting & Maintenance System
             </div>
             <div className="footer-right">
-              Active Session: <strong>{activeUser.name}</strong> ({activeUser.role}) · WMD Exp 9
+              Active Session: <strong>{activeUser.name}</strong> ({activeUser.role})
             </div>
           </div>
         </footer>
