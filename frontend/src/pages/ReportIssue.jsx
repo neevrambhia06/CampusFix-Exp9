@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/common/CommonComponents';
-import ReportIssueForm from '../components/ReportIssueForm';
+import ReportIssueForm from '../components/issues/ReportIssueForm';
 import { ArrowLeft } from 'lucide-react';
 
 export function ReportIssue() {
