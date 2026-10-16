@@ -23,20 +23,9 @@ import './index.css';
 function AppLayout() {
   const location = useLocation();
   const { 
-    dataSource, 
-    setDataSource, 
-    loadIssues, 
     searchTerm, 
     setSearchTerm 
   } = useCampusFix();
-
-  const handleToggleDataSource = () => {
-    if (dataSource === 'api') {
-      setDataSource('mock');
-    } else {
-      loadIssues();
-    }
-  };
 
   // Route '/' renders the standalone SaaS Landing Page (clean, full-width, no sidebar/topbar shell)
   if (location.pathname === '/') {
@@ -46,8 +35,6 @@ function AppLayout() {
   // All application portal pages render inside the AppShell
   return (
     <AppShell
-      dataSource={dataSource}
-      onToggleDataSource={handleToggleDataSource}
       searchTerm={searchTerm}
       onSearchChange={(e) => setSearchTerm(e.target.value)}
     >

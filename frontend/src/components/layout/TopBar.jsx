@@ -3,7 +3,7 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { Search, Bell, CheckCircle2, AlertCircle, Info, ShieldCheck, Lock, LogOut } from 'lucide-react';
 
 export function TopBar(props) {
-  const { user, isAdmin, onLogout, dataSource, onToggleDataSource, searchTerm, onSearchChange } = props;
+  const { user, isAdmin, onLogout, searchTerm, onSearchChange } = props;
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -78,16 +78,6 @@ export function TopBar(props) {
             className="topbar-search-input"
           />
         </div>
-
-        {/* Data Source Mode Switcher */}
-        <button
-          onClick={onToggleDataSource}
-          className={`datasource-badge ${dataSource === 'api' ? 'api-mode' : 'mock-mode'}`}
-          title="Toggle data source"
-        >
-          <span className="dot"></span>
-          <span>{dataSource === 'api' ? 'Live API' : 'Offline Mode'}</span>
-        </button>
 
         {/* Notification Bell Icon & Dropdown */}
         <div className="topbar-dropdown-wrapper">

@@ -227,8 +227,7 @@ export function AdminDashboard() {
     patchIssue, 
     deleteIssue, 
     loadIssues, 
-    loading,
-    dataSource 
+    loading
   } = useCampusFix();
 
   const navigate = useNavigate();
@@ -486,7 +485,7 @@ export function AdminDashboard() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Database size={15} style={{ color: '#004643' }} />
-            <span>Mode: <strong style={{ color: dataSource === 'api' ? '#047857' : '#B45309' }}>{dataSource === 'api' ? 'Connected' : 'Offline'}</strong></span>
+            <span>Database: <strong style={{ color: '#047857' }}>Cloud Database (Live)</strong></span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

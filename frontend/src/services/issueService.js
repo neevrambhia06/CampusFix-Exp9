@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://campusfix-backend-ceqd.onrender.com/api';
 const BASE_URL = `${API_BASE.replace(/\/$/, '')}/issues`;
 const AUTH_URL = `${API_BASE.replace(/\/$/, '')}/auth/login`;
 

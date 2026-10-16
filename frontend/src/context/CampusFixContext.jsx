@@ -36,7 +36,7 @@ export function CampusFixProvider({ children }) {
   // Status & Connectivity State
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [dataSource, setDataSource] = useState('api'); // 'api' or 'mock'
+  const dataSource = 'api'; // Always connected directly to API database
 
   // Admin status helper
   const isAdmin = useMemo(() => currentUser?.role === 'Admin', [currentUser]);
@@ -59,19 +59,16 @@ export function CampusFixProvider({ children }) {
     localStorage.removeItem('campusfix_token');
   };
 
-  // Load Issues Action (GET /issues)
+  // Load Issues Action (GET /issues) — directly from API database
   const loadIssues = async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await getIssues();
       setIssues(data);
-      setDataSource('api');
     } catch (err) {
-      console.warn('REST API unavailable. Falling back to mockData.js:', err.message);
-      setError('Unable to connect to Fixora API. Showing cached mock data.');
-      setIssues(mockIssues);
-      setDataSource('mock');
+      console.error('API load failed:', err.message);
+      setError('Unable to connect to Fixora API database. Please retry.');
     } finally {
       setLoading(false);
     }
@@ -82,85 +79,66 @@ export function CampusFixProvider({ children }) {
     loadIssues();
   }, []);
 
-  // Action: Add Issue (POST /issues)
+  // Action: Add Issue (POST /issues) — directly to API database
   const addIssue = async (newIssueData) => {
     setError(null);
     try {
-      if (dataSource === 'api') {
-        const created = await createIssue(newIssueData);
-        setIssues((prev) => [created, ...prev]);
-        return created;
-      } else {
-        const fallback = { ...newIssueData, id: String(Date.now()) };
-        setIssues((prev) => [fallback, ...prev]);
-        return fallback;
-      }
+      const created = await createIssue(newIssueData);
+      setIssues((prev) => [created, ...prev]);
+      return created;
     } catch (err) {
       console.error('API create issue failed:', err);
-      setError(`Failed to create issue on server: ${err.message}`);
-      const fallback = { ...newIssueData, id: String(Date.now()) };
-      setIssues((prev) => [fallback, ...prev]);
-      return fallback;
+      setError(`Failed to create issue on database: ${err.message}`);
+      throw err;
     }
   };
 
-  // Action: Update Issue (PUT /issues/:id)
+  // Action: Update Issue (PUT /issues/:id) — directly to API database
   const handleUpdateIssue = async (id, updatedIssueData) => {
     try {
-      if (dataSource === 'api') {
-        const updated = await updateIssue(id, updatedIssueData);
-        setIssues((prev) => prev.map((item) => (String(item.id) === String(id) ? updated : item)));
-        if (selectedIssue && String(selectedIssue.id) === String(id)) {
-          setSelectedIssue(updated);
-        }
-      } else {
-        setIssues((prev) =>
-          prev.map((item) => (String(item.id) === String(id) ? { ...item, ...updatedIssueData } : item))
-        );
+      const updated = await updateIssue(id, updatedIssueData);
+      setIssues((prev) => prev.map((item) => (String(item.id) === String(id) ? updated : item)));
+      if (selectedIssue && String(selectedIssue.id) === String(id)) {
+        setSelectedIssue(updated);
       }
+      return updated;
     } catch (err) {
       console.error('API update failed:', err);
-      setError(`Failed to replace issue: ${err.message}`);
+      setError(`Failed to update issue: ${err.message}`);
+      throw err;
     }
   };
 
-  // Action: Patch Issue (PATCH /issues/:id)
+  // Action: Patch Issue (PATCH /issues/:id) — directly to API database
   const handlePatchIssue = async (id, patchData) => {
     try {
-      if (dataSource === 'api') {
-        const patched = await patchIssue(id, patchData);
-        setIssues((prev) =>
-          prev.map((item) => (String(item.id) === String(id) ? { ...item, ...patched } : item))
-        );
-        if (selectedIssue && String(selectedIssue.id) === String(id)) {
-          setSelectedIssue((prev) => ({ ...prev, ...patched }));
-        }
-      } else {
-        setIssues((prev) =>
-          prev.map((item) => (String(item.id) === String(id) ? { ...item, ...patchData } : item))
-        );
+      const patched = await patchIssue(id, patchData);
+      setIssues((prev) =>
+        prev.map((item) => (String(item.id) === String(id) ? { ...item, ...patched } : item))
+      );
+      if (selectedIssue && String(selectedIssue.id) === String(id)) {
+        setSelectedIssue((prev) => ({ ...prev, ...patched }));
       }
+      return patched;
     } catch (err) {
       console.error('API patch status failed:', err);
-      setIssues((prev) =>
-        prev.map((item) => (String(item.id) === String(id) ? { ...item, ...patchData } : item))
-      );
+      setError(`Failed to update status: ${err.message}`);
+      throw err;
     }
   };
 
-  // Action: Delete Issue (DELETE /issues/:id)
+  // Action: Delete Issue (DELETE /issues/:id) — directly from API database
   const handleDeleteIssue = async (id) => {
     try {
-      if (dataSource === 'api') {
-        await deleteIssue(id);
-      }
+      await deleteIssue(id);
       setIssues((prev) => prev.filter((item) => String(item.id) !== String(id)));
       if (selectedIssue && String(selectedIssue.id) === String(id)) {
         setSelectedIssue(null);
       }
     } catch (err) {
       console.error('API delete failed:', err);
-      setIssues((prev) => prev.filter((item) => String(item.id) !== String(id)));
+      setError(`Failed to delete issue: ${err.message}`);
+      throw err;
     }
   };
 
@@ -254,8 +232,7 @@ export function CampusFixProvider({ children }) {
     setSearchTerm,
     setSelectedCategory,
     setSelectedPriority,
-    setSelectedStatus,
-    setDataSource,
+    setDataSource: () => {},
   };
 
   return (

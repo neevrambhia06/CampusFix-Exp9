@@ -95,7 +95,7 @@ export function EmptyState(props) {
 }
 
 export function ErrorState(props) {
-  const { title = 'API Connection Error', message, onRetry, onSwitchMock } = props;
+  const { title = 'API Connection Error', message, onRetry } = props;
   return (
     <div className="state-box error-box">
       <h3 className="state-title">{title}</h3>
@@ -106,12 +106,7 @@ export function ErrorState(props) {
       <div className="error-actions">
         {onRetry && (
           <button onClick={onRetry} className="btn btn-primary btn-sm">
-            Retry REST API Connection
-          </button>
-        )}
-        {onSwitchMock && (
-          <button onClick={onSwitchMock} className="btn btn-secondary btn-sm">
-            Use Static mockData.js
+            Retry Connection
           </button>
         )}
       </div>

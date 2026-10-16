@@ -14,9 +14,6 @@ export function Issues(props) {
   const loading = props.loading !== undefined ? props.loading : context.loading;
   const error = props.error !== undefined ? props.error : context.error;
   const onRetry = props.onRetry || context.loadIssues;
-  const onSwitchMock = props.onSwitchMock || (() => {
-    context.setDataSource('mock');
-  });
 
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('newest');
@@ -67,9 +64,8 @@ export function Issues(props) {
 
       {!loading && error && (
         <ErrorState
-          message="Unable to connect to CampusFix API."
+          message="Unable to connect to Fixora API."
           onRetry={onRetry}
-          onSwitchMock={onSwitchMock}
         />
       )}
 

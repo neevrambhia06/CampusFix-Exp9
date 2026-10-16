@@ -7,8 +7,6 @@ import { useCampusFix } from '../../context/CampusFixContext';
 export function AppShell(props) {
   const { 
     children, 
-    dataSource, 
-    onToggleDataSource, 
     searchTerm, 
     onSearchChange 
   } = props;
@@ -28,8 +26,6 @@ export function AppShell(props) {
           user={activeUser} 
           isAdmin={isAdmin}
           onLogout={logout}
-          dataSource={dataSource}
-          onToggleDataSource={onToggleDataSource}
           searchTerm={searchTerm}
           onSearchChange={onSearchChange}
         />

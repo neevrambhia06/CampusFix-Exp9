@@ -351,37 +351,6 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 0 0 3px rgba(0, 70, 67, 0.1);
 }
 
-.datasource-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-full);
-  font-size: 0.725rem;
-  font-weight: 700;
-  font-family: var(--font-mono);
-  cursor: pointer;
-  border: 1px solid transparent;
-}
-
-.datasource-badge.api-mode {
-  background-color: #D1FAE5;
-  color: #047857;
-  border-color: #A7F3D0;
-}
-
-.datasource-badge.mock-mode {
-  background-color: #FEF3C7;
-  color: #B45309;
-  border-color: #FDE68A;
-}
-
-.datasource-badge .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: currentColor;
-}
 
 .topbar-dropdown-wrapper {
   position: relative;
