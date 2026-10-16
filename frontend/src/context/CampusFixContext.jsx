@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { mockIssues } from '../data/mockData';
 import { 
   getIssues, 
@@ -346,19 +346,38 @@ export function CampusFixProvider({ children }) {
     }
   };
 
-  // Fetch single issue details
-  const fetchSingleIssue = async (id) => {
+  // Fetch single issue details (fast local lookup + background API fetch)
+  const fetchSingleIssue = useCallback(async (id) => {
+    // 1. Check current issues state first (0ms instantaneous return)
+    const foundLocal = issues.find((i) => String(i.id) === String(id));
+    if (foundLocal) {
+      return foundLocal;
+    }
+
+    // 2. Check localStorage cache
+    try {
+      const cached = JSON.parse(localStorage.getItem('campusfix_cached_issues') || '[]');
+      const foundInCache = cached.find((i) => String(i.id) === String(id));
+      if (foundInCache) return foundInCache;
+    } catch {}
+
+    // 3. Fallback to API if not available in memory or localStorage
     try {
       const issue = await getIssue(id);
-      setSelectedIssue(issue);
+      if (issue) {
+        setIssues((prev) => {
+          if (prev.some((item) => String(item.id) === String(issue.id))) return prev;
+          const updated = [...prev, issue];
+          try { localStorage.setItem('campusfix_cached_issues', JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+      }
       return issue;
     } catch (err) {
-      console.warn(`Could not fetch issue #${id} from API, finding in local state:`, err.message);
-      const found = issues.find((i) => String(i.id) === String(id));
-      if (found) setSelectedIssue(found);
-      return found;
+      console.warn(`Could not fetch issue #${id} from API:`, err.message);
+      return null;
     }
-  };
+  }, [issues]);
 
   // Derived Filtered Issues (non-mutating)
   const filteredIssues = useMemo(() => {

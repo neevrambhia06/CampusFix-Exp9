@@ -8,7 +8,7 @@ export function IssueTimeline(props) {
     {
       key: 'Reported',
       title: 'Issue Reported',
-      desc: 'Ticket logged into CampusFix database and queued for triage.',
+      desc: 'Ticket logged into Fixora database and queued for triage.',
       time: 'Completed',
       done: true
     },
