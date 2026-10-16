@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCampusFix } from '../../context/CampusFixContext';
-import { PlusCircle, CheckCircle2 } from 'lucide-react';
+import { PlusCircle, CheckCircle2, FileText } from 'lucide-react';
 
 export function ReportIssueForm({ onSuccessReturn }) {
   const { currentUser, addIssue } = useCampusFix();
+  const navigate = useNavigate();
 
   // 1. Controlled Inputs State
   const [formData, setFormData] = useState({
@@ -155,12 +157,16 @@ export function ReportIssueForm({ onSuccessReturn }) {
           <p className="state-message">
             Issue reported successfully. The ticket has been sent to the backend API and registered into Fixora system.
           </p>
-          <div className="success-actions">
+          <div className="success-actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
             {onSuccessReturn && (
               <button onClick={onSuccessReturn} className="btn btn-primary">
-                View Issues List
+                View All Issues
               </button>
             )}
+            <button onClick={() => navigate('/my-reports')} className="btn btn-secondary">
+              <FileText size={15} />
+              <span>Track in My Reports</span>
+            </button>
             <button onClick={handleResetAnother} className="btn btn-secondary">
               Report Another Issue
             </button>

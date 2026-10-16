@@ -2,8 +2,22 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://campusfix-backend-ceqd
 const BASE_URL = `${API_BASE.replace(/\/$/, '')}/issues`;
 const AUTH_URL = `${API_BASE.replace(/\/$/, '')}/auth/login`;
 
+// Helper: fetch with timeout to prevent hanging on Render spin-up
+async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeoutId);
+    return res;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
 export async function getIssues() {
-  const response = await fetch(BASE_URL);
+  const response = await fetchWithTimeout(BASE_URL, {}, 12000);
   if (!response.ok) {
     throw new Error(`Failed to fetch issues: ${response.statusText}`);
   }
@@ -11,7 +25,7 @@ export async function getIssues() {
 }
 
 export async function getIssue(id) {
-  const response = await fetch(`${BASE_URL}/${id}`);
+  const response = await fetchWithTimeout(`${BASE_URL}/${id}`, {}, 12000);
   if (!response.ok) {
     throw new Error(`Failed to fetch issue #${id}: ${response.statusText}`);
   }
@@ -19,13 +33,13 @@ export async function getIssue(id) {
 }
 
 export async function createIssue(issueData) {
-  const response = await fetch(BASE_URL, {
+  const response = await fetchWithTimeout(BASE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(issueData),
-  });
+  }, 45000);
   if (!response.ok) {
     throw new Error(`Failed to create issue: ${response.statusText}`);
   }
@@ -33,13 +47,13 @@ export async function createIssue(issueData) {
 }
 
 export async function updateIssue(id, issueData) {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const response = await fetchWithTimeout(`${BASE_URL}/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(issueData),
-  });
+  }, 10000);
   if (!response.ok) {
     throw new Error(`Failed to replace issue: ${response.statusText}`);
   }
@@ -47,13 +61,13 @@ export async function updateIssue(id, issueData) {
 }
 
 export async function patchIssue(id, patchData) {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const response = await fetchWithTimeout(`${BASE_URL}/${id}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(patchData),
-  });
+  }, 10000);
   if (!response.ok) {
     throw new Error(`Failed to update issue: ${response.statusText}`);
   }
@@ -61,9 +75,9 @@ export async function patchIssue(id, patchData) {
 }
 
 export async function deleteIssue(id) {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const response = await fetchWithTimeout(`${BASE_URL}/${id}`, {
     method: 'DELETE',
-  });
+  }, 10000);
   if (!response.ok) {
     throw new Error(`Failed to delete issue: ${response.statusText}`);
   }

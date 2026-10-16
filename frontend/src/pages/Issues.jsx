@@ -60,9 +60,11 @@ export function Issues(props) {
         onSortChange={(e) => setSortBy(e.target.value)}
       />
 
-      {loading && <LoadingState message="Loading campus issues..." />}
+      {loading && issuesToDisplay.length === 0 && (
+        <LoadingState message="Loading campus issues..." />
+      )}
 
-      {!loading && error && (
+      {!loading && error && issuesToDisplay.length === 0 && (
         <ErrorState
           message="Unable to connect to Fixora API."
           onRetry={onRetry}
@@ -79,7 +81,7 @@ export function Issues(props) {
         </div>
       )}
 
-      {!loading && !error && issuesToDisplay.length > 0 && (
+      {issuesToDisplay.length > 0 && (
         viewMode === 'grid' ? (
           <IssueGrid
             issues={issuesToDisplay}
