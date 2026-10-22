@@ -34,6 +34,19 @@ function writeDB(data) {
   }
 }
 
+// GET / - Root API Status check
+app.get('/', (req, res) => {
+  res.json({
+    service: 'Fixora Campus Maintenance API',
+    status: 'online',
+    tagline: 'Issues in. Solutions out.',
+    endpoints: {
+      issues: '/issues',
+      issueDetail: '/issues/:id',
+    },
+  });
+});
+
 // GET /issues - Fetch all issues
 app.get('/issues', (req, res) => {
   const db = readDB();
@@ -97,7 +110,8 @@ app.delete('/issues/:id', (req, res) => {
   res.json({ success: true, id: req.params.id });
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ CampusFix API server running on http://localhost:${PORT}`);
-  console.log(`👉 Endpoint: http://localhost:${PORT}/issues`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Fixora API Server running on port ${PORT}`);
+  console.log(`- Health check: http://localhost:${PORT}/`);
+  console.log(`- Issues API: http://localhost:${PORT}/issues`);
 });

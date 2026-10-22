@@ -1,6 +1,28 @@
 {
   "issues": [
     {
+      "id": "1792229169572",
+      "title": "TV not working",
+      "category": "Electrical",
+      "location": "Lab 409",
+      "priority": "High",
+      "status": "Resolved",
+      "reporter": "Priya Sharma",
+      "description": "The TV is not working",
+      "assignedTo": "Vikram Rao (IT & AV Network Lead)",
+      "resolutionNotes": "Inspected and repaired. Functionality tested and operational. (Logged by Suresh Kumar)"
+    },
+    {
+      "id": "1792228570243",
+      "title": "Broken AC in Room 204",
+      "category": "Plumbing",
+      "location": "Academic Block A Floor 2The air conditioner is making loud noise and not cooling properly",
+      "priority": "Medium",
+      "status": "Reported",
+      "reporter": "Priya Sharma",
+      "description": "The air conditioner is making loud noise and not cooling"
+    },
+    {
       "id": "1",
       "title": "Water Leakage in Lab 302",
       "category": "Plumbing",
@@ -16,9 +38,11 @@
       "category": "Electronics",
       "location": "Seminar Hall A",
       "priority": "Medium",
-      "status": "Reported",
+      "status": "Resolved",
       "reporter": "Priya Sharma",
-      "description": "The main projector display flickers intermittently due to a loose HDMI input connector."
+      "description": "The main projector display flickers intermittently due to a loose HDMI input connector. [PARTS REQUISITION: Technician requested spare parts]",
+      "assignedTo": "Suresh Kumar (Electrician)",
+      "resolutionNotes": "Inspected and repaired. Functionality tested and operational. (Logged by Suresh Kumar)"
     },
     {
       "id": "3",
