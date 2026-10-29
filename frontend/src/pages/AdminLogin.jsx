@@ -48,87 +48,6 @@ const DEPARTMENTS = [
   'Campus Facilities & Operations'
 ];
 
-// Automatic Role Detection Personas (Exp 10 Aligned)
-const EVALUATION_ROLES = [
-  {
-    id: 'student',
-    name: 'Student',
-    persona: 'Neev Rambhia',
-    username: '25206010',
-    password: 'student@123',
-    destination: '/dashboard',
-    color: '#0284C7',
-    bg: '#F0F9FF',
-    border: '#BAE6FD',
-  },
-  {
-    id: 'admin',
-    name: 'Administrator',
-    persona: 'Dr. Ananya Sen (Dean)',
-    username: 'admin',
-    password: 'admin@123',
-    destination: '/admin',
-    color: '#004643',
-    bg: '#E6F2F1',
-    border: '#B2D8D5',
-  },
-  {
-    id: 'tech-suresh',
-    name: 'Lead Technician',
-    persona: 'Suresh Kumar (Electrical)',
-    username: 'suresh',
-    password: 'tech@123',
-    destination: '/issues',
-    color: '#D97706',
-    bg: '#FFFBEB',
-    border: '#FDE68A',
-  },
-  {
-    id: 'tech-vikram',
-    name: 'IT / AV Lead',
-    persona: 'Vikram Rao (Network & AV)',
-    username: 'vikram',
-    password: 'tech@123',
-    destination: '/issues',
-    color: '#2563EB',
-    bg: '#EFF6FF',
-    border: '#BFDBFE',
-  },
-  {
-    id: 'tech-ramesh',
-    name: 'Plumbing Specialist',
-    persona: 'Ramesh Nair (Plumbing)',
-    username: 'ramesh',
-    password: 'tech@123',
-    destination: '/issues',
-    color: '#059669',
-    bg: '#ECFDF5',
-    border: '#A7F3D0',
-  },
-  {
-    id: 'tech-estate',
-    name: 'Estate Operations',
-    persona: 'Estate General Crew',
-    username: 'estate',
-    password: 'tech@123',
-    destination: '/issues',
-    color: '#475569',
-    bg: '#F1F5F9',
-    border: '#CBD5E1',
-  },
-  {
-    id: 'faculty',
-    name: 'Senior Faculty',
-    persona: 'Prof. Rajesh Verma',
-    username: 'faculty',
-    password: 'faculty@123',
-    destination: '/dashboard',
-    color: '#7C3AED',
-    bg: '#F5F3FF',
-    border: '#DDD6FE',
-  }
-];
-
 export function AdminLogin() {
   const { login, register, loginWithGoogle, logout, isAdmin, currentUser } = useCampusFix();
   const navigate = useNavigate();
@@ -166,7 +85,6 @@ export function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [showPresets, setShowPresets] = useState(false);
   const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
 
   // If already logged in and not switching, show user profile card
@@ -296,23 +214,6 @@ export function AdminLogin() {
         setErrorMessage('Google Authentication failed: ' + err.message);
       }
     }, 650);
-  };
-
-  // ----------------------------------------------------
-  // Handler: Quick Demo Role Login
-  // ----------------------------------------------------
-  const handleQuickDemoRole = async (role) => {
-    setErrorMessage('');
-    setLoading(true);
-    try {
-      const authenticatedUser = await login(role.username, role.password);
-      setIsSwitchingAccount(false);
-      navigate(role.destination);
-    } catch (err) {
-      setErrorMessage(err.message || 'Login failed.');
-    } finally {
-      setLoading(false);
-    }
   };
 
   // ====================================================
@@ -1478,96 +1379,6 @@ export function AdminLogin() {
               </div>
             </div>
           )}
-
-          {/* -------------------------------------------------- */}
-          {/* Collapsible Testing & Evaluator Access Helper      */}
-          {/* -------------------------------------------------- */}
-          <div style={{ marginTop: '1.75rem', borderTop: '1px solid #F1F5F9', paddingTop: '1rem' }}>
-            <button
-              type="button"
-              onClick={() => setShowPresets(!showPresets)}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: 'none',
-                border: 'none',
-                color: '#64748B',
-                fontSize: '0.775rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                padding: '6px 0'
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <KeyRound size={13} style={{ color: '#004643' }} />
-                <span>Faculty & Admin Evaluation Accounts</span>
-              </span>
-              <ChevronDown 
-                size={14} 
-                style={{ 
-                  transform: showPresets ? 'rotate(180deg)' : 'none',
-                  transition: 'transform 0.15s ease'
-                }} 
-              />
-            </button>
-
-            {showPresets && (
-              <div 
-                style={{ 
-                  marginTop: '0.75rem',
-                  padding: '0.875rem',
-                  backgroundColor: '#F8FAFC',
-                  borderRadius: '12px',
-                  border: '1px solid #E2E8F0',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px'
-                }}
-              >
-                <div style={{ fontSize: '0.725rem', color: '#64748B', lineHeight: 1.4, marginBottom: '2px' }}>
-                  Use these preset credentials for professor evaluation or grading:
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '6px' }}>
-                  {EVALUATION_ROLES.map((role) => (
-                    <button
-                      key={role.id}
-                      type="button"
-                      disabled={loading}
-                      onClick={() => handleQuickDemoRole(role)}
-                      style={{
-                        padding: '8px 6px',
-                        backgroundColor: '#ffffff',
-                        border: `1px solid ${role.border}`,
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        textAlign: 'center',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = role.bg;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = '#ffffff';
-                      }}
-                    >
-                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: role.color }}>
-                        {role.name}
-                      </div>
-                      <div style={{ fontSize: '0.675rem', color: '#334155', fontWeight: 600, marginTop: '1px' }}>
-                        {role.persona}
-                      </div>
-                      <div style={{ fontSize: '0.65rem', color: '#94A3B8', marginTop: '1px' }}>
-                        <code>{role.username}</code> · <code>{role.password}</code>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
 
         </div>
 

@@ -177,14 +177,27 @@ export function subscribeToIssues(onUpdate, onError) {
   }
 }
 
-// 8. Campus Authentication (Multi-Role Support — Exp 10 Aligned)
+// 8. Campus Authentication (Multi-Role Support — Exp 10 Aligned with Universal Standard Credentials)
 export async function loginUser(username, password) {
   const cleanUser = (username || '').trim().toLowerCase();
   const cleanPass = (password || '').trim();
 
-  // Admin (Dr. Ananya Sen)
-  if (cleanUser === 'admin' || cleanUser.startsWith('admin@')) {
-    if (cleanPass === 'admin@123' || cleanPass === 'admin' || cleanPass === 'admin123') {
+  // Helper: check if password matches standard universal conventions for a role
+  const isMatchPass = (roleWord, specificPasses = []) => {
+    return (
+      cleanPass === roleWord ||
+      cleanPass === `${roleWord}123` ||
+      cleanPass === `${roleWord}@123` ||
+      cleanPass === 'password' ||
+      cleanPass === 'password123' ||
+      cleanPass === '123456' ||
+      specificPasses.includes(cleanPass)
+    );
+  };
+
+  // 1. Admin (Dr. Ananya Sen)
+  if (cleanUser === 'admin' || cleanUser.startsWith('admin@') || cleanUser === 'administrator') {
+    if (isMatchPass('admin')) {
       return {
         success: true,
         user: {
@@ -201,16 +214,26 @@ export async function loginUser(username, password) {
     }
   }
 
-  // Technicians (Suresh, Vikram, Ramesh, Estate Crew, Rajesh)
-  const isTechPass = cleanPass === 'tech@123' || cleanPass === 'tech' || cleanPass.endsWith('@123');
+  // 2. Technicians (Suresh, Vikram, Ramesh, Estate Crew, Rajesh)
   const isTechUser = 
+    cleanUser === 'tech' ||
+    cleanUser === 'technician' ||
+    cleanUser.startsWith('tech@') ||
     cleanUser === 'suresh' || cleanUser.startsWith('suresh') ||
     cleanUser === 'vikram' || cleanUser.startsWith('vikram') ||
     cleanUser === 'ramesh' || cleanUser.startsWith('ramesh') ||
     cleanUser === 'estate' || cleanUser.startsWith('estate') ||
     cleanUser === 'crew' || cleanUser.startsWith('crew') ||
-    cleanUser === 'technician' || cleanUser.includes('tech') ||
-    (cleanUser.includes('rajesh') && cleanPass === 'tech@123');
+    cleanUser.includes('tech') ||
+    (cleanUser.includes('rajesh') && (cleanPass.includes('tech') || cleanPass === 'tech123' || cleanPass === 'tech@123'));
+
+  const isTechPass = 
+    isMatchPass('tech') ||
+    cleanPass === 'technician' ||
+    cleanPass === 'technician123' ||
+    cleanPass === 'technician@123' ||
+    cleanPass.endsWith('@123') ||
+    cleanPass.endsWith('123');
 
   if (isTechUser && isTechPass) {
     let techName = 'Suresh Kumar';
@@ -256,9 +279,9 @@ export async function loginUser(username, password) {
     };
   }
 
-  // Faculty (Prof. Rajesh Verma)
-  if (cleanUser === 'faculty' || cleanUser.includes('prof') || (cleanUser.includes('rajesh') && cleanPass === 'faculty@123')) {
-    if (cleanPass === 'faculty@123' || cleanPass === 'faculty' || cleanPass === 'rajesh@123') {
+  // 3. Faculty (Prof. Rajesh Verma)
+  if (cleanUser === 'faculty' || cleanUser.includes('prof') || (cleanUser.includes('rajesh') && (cleanPass.includes('faculty') || cleanPass === 'faculty@123' || cleanPass === 'faculty123'))) {
+    if (isMatchPass('faculty', ['faculty', 'faculty123', 'faculty@123', 'prof', 'prof123', 'rajesh', 'rajesh123', 'rajesh@123'])) {
       return {
         success: true,
         user: {
@@ -275,19 +298,19 @@ export async function loginUser(username, password) {
     }
   }
 
-  // Student (Numeric Moodle ID)
+  // 4. Student (Numeric Moodle ID or 'student')
   const beforeAt = cleanUser.includes('@') ? cleanUser.split('@')[0] : cleanUser;
   const isNumeric = /^\d+$/.test(beforeAt);
 
-  if (isNumeric || cleanUser.startsWith('student') || cleanUser.endsWith('@apsit.edu.in')) {
+  if (isNumeric || cleanUser === 'student' || cleanUser.startsWith('student') || cleanUser.endsWith('@apsit.edu.in')) {
     const studentId = isNumeric ? beforeAt : '25206010';
-    const isStudentPass = cleanPass === 'student@123' || cleanPass === 'student' || cleanPass === studentId;
+    const isStudentPass = isMatchPass('student', [studentId, `${studentId}123`, `${studentId}@123`]);
     if (isStudentPass) {
       return {
         success: true,
         user: {
           id: studentId,
-          name: studentId === '25206010' ? 'Neev Rambhia' : 'Student Reporter',
+          name: (studentId === '25206010' || cleanUser === 'student' || cleanUser.startsWith('student')) ? 'Neev Rambhia' : 'Student Reporter',
           username: cleanUser,
           role: 'Student',
           department: `Computer Engineering (ID ${studentId})`,
