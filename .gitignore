@@ -29,6 +29,9 @@ frontend/.env.production.local
 .DS_Store
 Thumbs.db
 
+# Documents
+*.docx
+
 # Environment secrets
 .env
 .env.local
