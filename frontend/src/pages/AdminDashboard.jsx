@@ -480,12 +480,12 @@ export function AdminDashboard() {
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Server size={15} style={{ color: '#004643' }} />
-            <span>Backend: <strong style={{ color: '#0F172A' }}>Production API (Cloud)</strong></span>
+            <span>Backend: <strong style={{ color: '#0F172A' }}>Google Firebase</strong></span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Database size={15} style={{ color: '#004643' }} />
-            <span>Database: <strong style={{ color: '#047857' }}>Cloud Database (Live)</strong></span>
+            <span>Database: <strong style={{ color: '#047857' }}>Cloud Firestore (Live)</strong></span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

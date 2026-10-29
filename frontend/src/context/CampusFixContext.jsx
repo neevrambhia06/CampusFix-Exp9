@@ -7,6 +7,7 @@ import {
   updateIssue, 
   patchIssue, 
   deleteIssue,
+  subscribeToIssues,
   loginAdmin
 } from '../services/issueService';
 
@@ -52,7 +53,7 @@ export function CampusFixProvider({ children }) {
   // Status & Connectivity State
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const dataSource = 'api'; // Always connected directly to API database
+  const dataSource = 'firebase'; // Connected directly to Firebase Cloud Firestore
 
   // Admin status helper
   const isAdmin = useMemo(() => currentUser?.role === 'Admin', [currentUser]);
@@ -169,51 +170,47 @@ export function CampusFixProvider({ children }) {
     localStorage.removeItem('campusfix_token');
   };
 
-  // Load Issues Action (GET /issues) — Stale-While-Revalidate with API database sync
+  // Load Issues Action — Fetches directly from Firebase Cloud Firestore
   const loadIssues = async (isRetry = false) => {
     setError(null);
     try {
       const data = await getIssues();
       if (Array.isArray(data) && data.length > 0) {
-        setIssues((prev) => {
-          const apiIds = new Set(data.map((i) => String(i.id)));
-          
-          let myTicketIds = [];
-          try {
-            myTicketIds = JSON.parse(localStorage.getItem('campusfix_my_ticket_ids') || '[]');
-          } catch {}
-
-          // Retain any locally created tickets that aren't on the server yet
-          const localOnly = prev.filter(
-            (i) => !apiIds.has(String(i.id)) && (String(i.id).startsWith('ISS-') || myTicketIds.map(String).includes(String(i.id)))
-          );
-
-          // Retain mock issues that aren't colliding so initial demonstration data remains intact
-          const remainingMock = mockIssues.filter(
-            (m) => !apiIds.has(String(m.id)) && !localOnly.some((l) => String(l.id) === String(m.id))
-          );
-
-          const merged = [...localOnly, ...data, ...remainingMock];
-          try {
-            localStorage.setItem('campusfix_cached_issues', JSON.stringify(merged));
-          } catch {}
-          return merged;
-        });
+        setIssues(data);
+        try {
+          localStorage.setItem('campusfix_cached_issues', JSON.stringify(data));
+        } catch {}
       }
     } catch (err) {
-      console.warn('API sync deferred (using local cached issues):', err.message);
-      // Auto-retry once after 3.5s if Render was spinning up
+      console.warn('Firestore fetch deferred (using local cached issues):', err.message);
       if (!isRetry) {
-        setTimeout(() => loadIssues(true), 3500);
+        setTimeout(() => loadIssues(true), 2000);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Initial Load with useEffect
+  // Real-Time Firestore Synchronization
   useEffect(() => {
+    // 1. Initial immediate load
     loadIssues();
+
+    // 2. Setup real-time listener for live sync across all tabs/users
+    const unsubscribe = subscribeToIssues((firestoreIssues) => {
+      if (Array.isArray(firestoreIssues) && firestoreIssues.length > 0) {
+        setIssues(firestoreIssues);
+        try {
+          localStorage.setItem('campusfix_cached_issues', JSON.stringify(firestoreIssues));
+        } catch {}
+      }
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, []);
 
   // Action: Add Issue (POST /issues) — Instant Optimistic Creation & Background Sync
