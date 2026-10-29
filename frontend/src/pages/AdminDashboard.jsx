@@ -19,6 +19,7 @@ import {
   Layers
 } from 'lucide-react';
 import { useCampusFix } from '../context/CampusFixContext';
+import { formatReporterName } from '../data/mockData';
 
 // ==========================================
 // Minimalist & Aesthetic Custom Status Dropdown
@@ -284,7 +285,10 @@ export function AdminDashboard() {
 
   // Filter issues
   const filteredIssues = issues.filter((issue) => {
-    const matchesStatus = statusFilter === 'All' || issue.status === statusFilter;
+    const isResolved = (issue.status || '').toLowerCase() === 'resolved';
+    const matchesStatus = statusFilter === 'All' 
+      ? !isResolved 
+      : (issue.status || '').toLowerCase() === statusFilter.toLowerCase();
     const matchesPriority = priorityFilter === 'All' || issue.priority === priorityFilter;
     const q = searchQuery.toLowerCase();
     const matchesSearch = !searchQuery || 
@@ -713,7 +717,12 @@ export function AdminDashboard() {
                           {issue.description || 'No description provided.'}
                         </div>
                         <div style={{ fontSize: '0.725rem', color: '#94A3B8', marginTop: '3px' }}>
-                          Reported by <strong style={{ color: '#475569' }}>{issue.reporter || 'Anonymous'}</strong>
+                          Reported by <strong style={{ color: '#475569' }}>{formatReporterName(issue.reporter || issue.reportedBy)}</strong>
+                        {issue.assignedTo && (
+                          <span style={{ marginLeft: '6px', color: '#004643', fontWeight: 600, fontSize: '0.725rem' }}>
+                            · Assigned: <strong>{issue.assignedTo}</strong>
+                          </span>
+                        )}
                         </div>
                       </td>
 

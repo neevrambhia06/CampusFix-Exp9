@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader, LoadingState, ErrorState } from '../components/common/CommonComponents';
 import IssueToolbar from '../components/issues/IssueToolbar';
 import IssueGrid from '../components/issues/IssueGrid';
 import IssueRow from '../components/issues/IssueRow';
 import { useCampusFix } from '../context/CampusFixContext';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Wrench, Layers } from 'lucide-react';
+import { isAssignedToUser } from '../data/mockData';
 
 export function Issues(props) {
   const context = useCampusFix();
@@ -17,17 +18,31 @@ export function Issues(props) {
 
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('newest');
+  const [scope, setScope] = useState('all'); // 'all' | 'assigned'
 
-  const issuesToDisplay = [...context.filteredIssues].sort((a, b) => {
-    if (sortBy === 'priority') {
-      const pOrder = { High: 3, Medium: 2, Low: 1 };
-      return (pOrder[b.priority] || 0) - (pOrder[a.priority] || 0);
+  const isTechnician = context.currentUser?.role === 'Technician';
+
+  // Apply technician assigned scope filter if active
+  const scopedIssues = useMemo(() => {
+    let list = context.filteredIssues;
+    if (isTechnician && scope === 'assigned') {
+      list = list.filter((issue) => isAssignedToUser(issue.assignedTo, context.currentUser));
     }
-    if (sortBy === 'oldest') {
-      return String(a.id).localeCompare(String(b.id));
-    }
-    return String(b.id).localeCompare(String(a.id));
-  });
+    return list;
+  }, [context.filteredIssues, isTechnician, scope, context.currentUser]);
+
+  const issuesToDisplay = useMemo(() => {
+    return [...scopedIssues].sort((a, b) => {
+      if (sortBy === 'priority') {
+        const pOrder = { High: 3, Medium: 2, Low: 1 };
+        return (pOrder[b.priority] || 0) - (pOrder[a.priority] || 0);
+      }
+      if (sortBy === 'oldest') {
+        return String(a.id).localeCompare(String(b.id));
+      }
+      return String(b.id).localeCompare(String(a.id));
+    });
+  }, [scopedIssues, sortBy]);
 
   return (
     <div className="issues-page space-y">
@@ -44,6 +59,84 @@ export function Issues(props) {
           </button>
         }
       />
+
+      {/* Technician Scope Switch (Exp 10 RBAC) */}
+      {isTechnician && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          backgroundColor: '#F1F5F9',
+          padding: '4px',
+          borderRadius: '12px',
+          width: 'fit-content',
+          border: '1px solid #E2E8F0'
+        }}>
+          <button
+            type="button"
+            onClick={() => setScope('all')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 16px',
+              borderRadius: '9px',
+              border: 'none',
+              backgroundColor: scope === 'all' ? '#004643' : 'transparent',
+              color: scope === 'all' ? '#FFFFFF' : '#475569',
+              fontSize: '0.825rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: scope === 'all' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Layers size={14} />
+            <span>All Campus</span>
+            <span style={{
+              fontSize: '0.7rem',
+              padding: '1px 6px',
+              borderRadius: '9999px',
+              backgroundColor: scope === 'all' ? 'rgba(255,255,255,0.2)' : '#E2E8F0',
+              color: scope === 'all' ? '#FFFFFF' : '#475569'
+            }}>
+              {context.filteredIssues.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setScope('assigned')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 16px',
+              borderRadius: '9px',
+              border: 'none',
+              backgroundColor: scope === 'assigned' ? '#004643' : 'transparent',
+              color: scope === 'assigned' ? '#FFFFFF' : '#475569',
+              fontSize: '0.825rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: scope === 'assigned' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Wrench size={14} />
+            <span>My Assigned</span>
+            <span style={{
+              fontSize: '0.7rem',
+              padding: '1px 6px',
+              borderRadius: '9999px',
+              backgroundColor: scope === 'assigned' ? 'rgba(255,255,255,0.2)' : '#E2E8F0',
+              color: scope === 'assigned' ? '#FFFFFF' : '#475569'
+            }}>
+              {context.filteredIssues.filter(i => isAssignedToUser(i.assignedTo, context.currentUser)).length}
+            </span>
+          </button>
+        </div>
+      )}
 
       <IssueToolbar
         searchTerm={context.searchTerm}

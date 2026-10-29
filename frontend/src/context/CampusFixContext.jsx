@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { mockIssues } from '../data/mockData';
+import { mockIssues, isAssignedToUser, formatReporterName } from '../data/mockData';
 import { 
   getIssues, 
   getIssue, 
@@ -8,7 +8,8 @@ import {
   patchIssue, 
   deleteIssue,
   subscribeToIssues,
-  loginAdmin
+  loginAdmin,
+  loginUser
 } from '../services/issueService';
 
 // 1. Create Context
@@ -49,6 +50,9 @@ export function CampusFixProvider({ children }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedPriority, setSelectedPriority] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
+  const [activeAlert, setActiveAlert] = useState(null);
+  const openAlertModal = (alert) => setActiveAlert(alert);
+  const closeAlertModal = () => setActiveAlert(null);
 
   // Status & Connectivity State
   const [loading, setLoading] = useState(false);
@@ -68,12 +72,25 @@ export function CampusFixProvider({ children }) {
     }
   };
 
-  // Auth Action: Standard Login (Checks local registered users first, then API)
+  // Auth Action: Standard Login (Unified University Login with Automatic Role Detection)
   const login = async (identifier, password) => {
     const cleanId = (identifier || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
-    // 1. Check local registered student/staff directory
+    // 1. Authenticate against standard university personas (Admin, Tech, Faculty, Student)
+    try {
+      const res = await loginUser(cleanId, cleanPass);
+      if (res && res.user) {
+        setCurrentUser(res.user);
+        localStorage.setItem('campusfix_user', JSON.stringify(res.user));
+        if (res.token) localStorage.setItem('campusfix_token', res.token);
+        return res.user;
+      }
+    } catch {
+      // Continue to check local registered student/staff directory
+    }
+
+    // 2. Check local registered student/staff directory
     const registeredUsers = getRegisteredUsers();
     const matched = registeredUsers.find(
       (u) =>
@@ -92,15 +109,7 @@ export function CampusFixProvider({ children }) {
       return sessionUser;
     }
 
-    // 2. Authenticate against Spring Boot API database
-    const res = await loginAdmin(identifier, password);
-    if (res && res.user) {
-      setCurrentUser(res.user);
-      localStorage.setItem('campusfix_user', JSON.stringify(res.user));
-      if (res.token) localStorage.setItem('campusfix_token', res.token);
-      return res.user;
-    }
-    throw new Error('Authentication failed: Invalid credentials.');
+    throw new Error('Incorrect credentials. Please verify your campus username and password.');
   };
 
   // Auth Action: Register genuine student or staff member
@@ -351,16 +360,25 @@ export function CampusFixProvider({ children }) {
       return foundLocal;
     }
 
-    // 2. Check localStorage cache
+    // 2. Check bundled mock issues (guarantees instant resolution for standard campus issues)
+    const foundMock = mockIssues.find((i) => String(i.id) === String(id));
+    if (foundMock) {
+      return foundMock;
+    }
+
+    // 3. Check localStorage cache
     try {
       const cached = JSON.parse(localStorage.getItem('campusfix_cached_issues') || '[]');
       const foundInCache = cached.find((i) => String(i.id) === String(id));
       if (foundInCache) return foundInCache;
     } catch {}
 
-    // 3. Fallback to API if not available in memory or localStorage
+    // 4. Fallback to API if not available in memory or localStorage (with 2500ms safety timeout)
     try {
-      const issue = await getIssue(id);
+      const issue = await Promise.race([
+        getIssue(id),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Fetch timeout')), 2500))
+      ]);
       if (issue) {
         setIssues((prev) => {
           if (prev.some((item) => String(item.id) === String(issue.id))) return prev;
@@ -371,12 +389,12 @@ export function CampusFixProvider({ children }) {
       }
       return issue;
     } catch (err) {
-      console.warn(`Could not fetch issue #${id} from API:`, err.message);
-      return null;
+      console.warn(`Could not fetch issue #${id} from API (using fallback):`, err.message);
+      return foundMock || null;
     }
   }, [issues]);
 
-  // Derived Filtered Issues (non-mutating)
+  // Derived Filtered Issues (non-mutating — Requirement 2: Hide resolved unless explicitly selected)
   const filteredIssues = useMemo(() => {
     return issues.filter((issue) => {
       const titleText = (issue.title || '').toLowerCase();
@@ -400,8 +418,12 @@ export function CampusFixProvider({ children }) {
       const matchesPriority =
         selectedPriority === 'All' || issue.priority === selectedPriority;
 
+      // Requirement 2: Hide resolved issues on "All", show ONLY when "Resolved" filter is selected
+      const isResolved = (issue.status || '').toLowerCase() === 'resolved';
       const matchesStatus =
-        selectedStatus === 'All' || issue.status === selectedStatus;
+        selectedStatus === 'All'
+          ? !isResolved
+          : (issue.status || '').toLowerCase() === selectedStatus.toLowerCase();
 
       return matchesSearch && matchesCategory && matchesPriority && matchesStatus;
     });

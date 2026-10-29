@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import MobileNav from './MobileNav';
+import AlertDetailsModal from '../common/AlertDetailsModal';
 import { useCampusFix } from '../../context/CampusFixContext';
 
 export function AppShell(props) {
@@ -12,7 +13,7 @@ export function AppShell(props) {
     onSearchChange 
   } = props;
 
-  const { currentUser, isAdmin, logout } = useCampusFix();
+  const { currentUser, isAdmin, logout, activeAlert, closeAlertModal } = useCampusFix();
 
   return (
     <div className="app-shell">
@@ -51,6 +52,11 @@ export function AppShell(props) {
           </div>
         </footer>
       </div>
+
+      {/* Global Interactive Alert & Notifications Modal */}
+      {activeAlert && (
+        <AlertDetailsModal alert={activeAlert} onClose={closeAlertModal} />
+      )}
 
       {/* Mobile Bottom Navigation */}
       <MobileNav />

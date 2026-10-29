@@ -74,7 +74,10 @@ export function MyReports(props) {
   // Apply status and search filtering to active dataset
   const displayedIssues = useMemo(() => {
     return activeDataset.filter((i) => {
-      const matchesStatus = statusFilter === 'All' || i.status === statusFilter;
+      const isResolved = (i.status || '').toLowerCase() === 'resolved';
+      const matchesStatus = statusFilter === 'All' 
+        ? !isResolved 
+        : (i.status || '').toLowerCase() === statusFilter.toLowerCase();
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||

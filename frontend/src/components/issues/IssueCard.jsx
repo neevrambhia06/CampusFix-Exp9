@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, User, ChevronRight, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
+import { MapPin, User, ChevronRight, AlertTriangle, CheckCircle2, Clock, Wrench } from 'lucide-react';
+import { formatReporterName } from '../../data/mockData';
 
 export function IssueCard(props) {
   const { issue, onStatusChange, onDelete } = props;
@@ -63,8 +64,14 @@ export function IssueCard(props) {
         </div>
         <div className="meta-item">
           <User size={14} className="meta-icon" />
-          <span className="meta-text">{issue.reporter}</span>
+          <span className="meta-text">{formatReporterName(issue.reporter || issue.reportedBy)}</span>
         </div>
+        {issue.assignedTo && (
+          <div className="meta-item" style={{ color: '#004643', fontWeight: 600 }}>
+            <Wrench size={13} className="meta-icon" />
+            <span className="meta-text">{issue.assignedTo}</span>
+          </div>
+        )}
       </div>
 
       {/* Action Footer */}

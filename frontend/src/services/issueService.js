@@ -13,104 +13,7 @@ import { mockIssues } from '../data/mockData.js';
 const ISSUES_COLLECTION = 'issues';
 
 // Default initial dataset to seed into Firestore if the database collection is empty
-const defaultSeedIssues = [
-  {
-    id: "1",
-    title: "Water Leakage in Lab 302",
-    category: "Plumbing",
-    location: "Academic Block B - 3rd Floor",
-    priority: "High",
-    status: "In Progress",
-    reporter: "Aarav Shah",
-    reportedAt: "2h ago",
-    updatedAt: "30m ago",
-    description: "Continuous water dripping near the AC pipeline causing ceiling dampness and risk of short circuit."
-  },
-  {
-    id: "2",
-    title: "Projector HDMI Port Damaged",
-    category: "IT / Network",
-    location: "Seminar Hall A",
-    priority: "Medium",
-    status: "Reported",
-    reporter: "Priya Sharma",
-    reportedAt: "4h ago",
-    updatedAt: "4h ago",
-    description: "The main projector display flickers intermittently due to a loose HDMI input connector."
-  },
-  {
-    id: "3",
-    title: "Broken Desk in Classroom 104",
-    category: "Furniture",
-    location: "Main Building - Ground Floor",
-    priority: "Low",
-    status: "Resolved",
-    reporter: "Rohan Verma",
-    reportedAt: "1d ago",
-    updatedAt: "2h ago",
-    description: "Desktop wood panel came off on desk row 3, bench number 4."
-  },
-  {
-    id: "4",
-    title: "Wi-Fi Access Point Offline",
-    category: "IT / Network",
-    location: "Central Library - 2nd Floor",
-    priority: "High",
-    status: "Reported",
-    reporter: "Ananya Patel",
-    reportedAt: "5h ago",
-    updatedAt: "5h ago",
-    description: "No internet connection available near the quiet study zone since morning."
-  },
-  {
-    id: "5",
-    title: "Elevator B Door Sensor Fault",
-    category: "Electrical",
-    location: "Engineering Block",
-    priority: "High",
-    status: "In Progress",
-    reporter: "Karan Malhotra",
-    reportedAt: "6h ago",
-    updatedAt: "1h ago",
-    description: "Elevator doors close abruptly without sensing obstruction."
-  },
-  {
-    id: "6",
-    title: "Gym Equipment Handle Broken",
-    category: "Facilities",
-    location: "Sports Complex",
-    priority: "Low",
-    status: "Resolved",
-    reporter: "Neha Gupta",
-    reportedAt: "2d ago",
-    updatedAt: "1d ago",
-    description: "Cable crossover machine right handle grip is damaged."
-  },
-  {
-    id: "7",
-    title: "AC not working",
-    category: "Electrical",
-    location: "Lab 408",
-    priority: "High",
-    status: "Reported",
-    reporter: "Aarav Sharma",
-    reportedAt: "1d ago",
-    updatedAt: "1d ago",
-    description: "Continuous AC malfunction causing high temperature in lab."
-  },
-  {
-    id: "8",
-    title: "Campus Wi-Fi Router Reset Required",
-    category: "IT / Network",
-    location: "Hostel Block C",
-    priority: "Medium",
-    status: "Reported",
-    reporter: "Neev Rambhia",
-    reportedAt: "Just now",
-    updatedAt: "Just now",
-    description: "Frequent disconnects on the 5GHz SSID across floors 2 and 3."
-  }
-];
+const defaultSeedIssues = mockIssues;
 
 // Helper to seed Firestore if empty
 async function seedFirestoreIfEmpty() {
@@ -126,13 +29,16 @@ async function seedFirestoreIfEmpty() {
   }
 }
 
-// 1. Fetch all issues from Firebase Firestore
+// 1. Fetch all issues from Firebase Firestore (with 2500ms safety timeout)
 export async function getIssues() {
   try {
     const colRef = collection(db, ISSUES_COLLECTION);
-    const snapshot = await getDocs(colRef);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Firestore getDocs timeout')), 2500)
+    );
+    const snapshot = await Promise.race([getDocs(colRef), timeoutPromise]);
 
-    if (snapshot.empty) {
+    if (!snapshot || snapshot.empty) {
       console.log('Firestore issues collection is empty. Seeding initial campus issues...');
       return await seedFirestoreIfEmpty();
     }
@@ -142,34 +48,37 @@ export async function getIssues() {
       ...docSnap.data()
     }));
 
-    // Sort by id descending (or newest first)
     return issues.sort((a, b) => String(b.id).localeCompare(String(a.id), undefined, { numeric: true }));
   } catch (err) {
-    console.warn('Firebase getIssues failed, falling back to local cache/mock:', err.message);
+    console.warn('Firebase getIssues deferred (using fallback):', err.message);
     try {
       const cached = JSON.parse(localStorage.getItem('campusfix_cached_issues') || '[]');
-      if (cached.length > 0) return cached;
+      if (Array.isArray(cached) && cached.length > 0) return cached;
     } catch {}
     return mockIssues;
   }
 }
 
-// 2. Fetch single issue from Firebase Firestore
+// 2. Fetch single issue from Firebase Firestore (0ms instant match + 2000ms safety timeout)
 export async function getIssue(id) {
+  const localMatch = mockIssues.find((i) => String(i.id) === String(id));
+
   try {
     const docRef = doc(db, ISSUES_COLLECTION, String(id));
-    const docSnap = await getDoc(docRef);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Firestore getDoc timeout')), 2000)
+    );
+    const docSnap = await Promise.race([getDoc(docRef), timeoutPromise]);
 
-    if (docSnap.exists()) {
+    if (docSnap && docSnap.exists && docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() };
     }
     
-    // Check fallback in seed issues or mock
-    const fallback = defaultSeedIssues.find((i) => String(i.id) === String(id));
-    if (fallback) return fallback;
+    if (localMatch) return localMatch;
     throw new Error(`Issue #${id} not found in Firestore.`);
   } catch (err) {
-    console.warn(`Firebase getIssue #${id} failed:`, err.message);
+    console.warn(`Firebase getIssue #${id} deferred (using local cache):`, err.message);
+    if (localMatch) return localMatch;
     throw err;
   }
 }
@@ -268,93 +177,129 @@ export function subscribeToIssues(onUpdate, onError) {
   }
 }
 
-// 8. Campus Authentication (Multi-Role Support)
+// 8. Campus Authentication (Multi-Role Support — Exp 10 Aligned)
 export async function loginUser(username, password) {
   const cleanUser = (username || '').trim().toLowerCase();
   const cleanPass = (password || '').trim();
 
-  if (cleanUser === 'admin' && (cleanPass === 'admin' || cleanPass === 'admin123')) {
-    return {
-      success: true,
-      user: {
-        id: 'ADM-2026-01',
-        name: 'Campus Administrator',
-        username: 'admin',
-        role: 'Admin',
-        department: 'Campus Maintenance Directorate',
-        email: 'admin@fixora.edu',
-        avatar: '🛡️',
-      },
-      token: `adm_fb_${Date.now()}`,
-    };
+  // Admin (Dr. Ananya Sen)
+  if (cleanUser === 'admin' || cleanUser.startsWith('admin@')) {
+    if (cleanPass === 'admin@123' || cleanPass === 'admin' || cleanPass === 'admin123') {
+      return {
+        success: true,
+        user: {
+          id: 'ADM-SEN',
+          name: 'Dr. Ananya Sen',
+          username: 'admin',
+          role: 'Admin',
+          department: 'Dean of Infrastructure & Campus Operations',
+          email: 'admin@apsit.edu.in',
+          avatar: '🛡️',
+        },
+        token: `adm_${Date.now()}`,
+      };
+    }
   }
 
-  if (cleanUser === 'student' || cleanUser === 'aarav' || cleanUser.includes('student')) {
-    return {
-      success: true,
-      user: {
-        id: 'STU-2026-88',
-        name: 'Aarav Shah',
-        username: 'student',
-        role: 'Student',
-        department: 'Computer Science & Engg.',
-        email: 'aarav.shah@campus.edu',
-        avatar: '🎓',
-      },
-      token: `stu_fb_${Date.now()}`,
-    };
-  }
+  // Technicians (Suresh, Vikram, Ramesh, Estate Crew, Rajesh)
+  const isTechPass = cleanPass === 'tech@123' || cleanPass === 'tech' || cleanPass.endsWith('@123');
+  const isTechUser = 
+    cleanUser === 'suresh' || cleanUser.startsWith('suresh') ||
+    cleanUser === 'vikram' || cleanUser.startsWith('vikram') ||
+    cleanUser === 'ramesh' || cleanUser.startsWith('ramesh') ||
+    cleanUser === 'estate' || cleanUser.startsWith('estate') ||
+    cleanUser === 'crew' || cleanUser.startsWith('crew') ||
+    cleanUser === 'technician' || cleanUser.includes('tech') ||
+    (cleanUser.includes('rajesh') && cleanPass === 'tech@123');
 
-  if (cleanUser === 'faculty' || cleanUser === 'teacher' || cleanUser.includes('prof')) {
-    return {
-      success: true,
-      user: {
-        id: 'FAC-2026-14',
-        name: 'Dr. Neha Sen',
-        username: 'faculty',
-        role: 'Faculty',
-        department: 'Information Technology',
-        email: 'neha.sen@campus.edu',
-        avatar: '👩‍🏫',
-      },
-      token: `fac_fb_${Date.now()}`,
-    };
-  }
+  if (isTechUser && isTechPass) {
+    let techName = 'Suresh Kumar';
+    let techDept = 'Campus Facilities & Electrical Maintenance';
+    let techId = 'TECH-SURESH';
+    let techTitle = 'Lead Maintenance Technician';
 
-  if (cleanUser === 'technician' || cleanUser === 'tech' || cleanUser.includes('crew')) {
+    if (cleanUser.includes('vikram')) {
+      techName = 'Vikram Rao';
+      techDept = 'IT & Audio-Visual Systems';
+      techId = 'TECH-VIKRAM';
+      techTitle = 'IT & AV Network Lead';
+    } else if (cleanUser.includes('ramesh')) {
+      techName = 'Ramesh Nair';
+      techDept = 'Plumbing & Water Management';
+      techId = 'TECH-RAMESH';
+      techTitle = 'Plumbing Specialist';
+    } else if (cleanUser.includes('estate') || cleanUser.includes('crew')) {
+      techName = 'Estate General Crew';
+      techDept = 'Estate Maintenance & Ground Facilities';
+      techId = 'TECH-CREW';
+      techTitle = 'Campus General Operations Crew';
+    } else if (cleanUser.includes('rajesh')) {
+      techName = 'Rajesh Sharma';
+      techDept = 'Air Conditioning & Ventilation Support';
+      techId = 'TECH-RAJESH';
+      techTitle = 'HVAC & Facilities Technician';
+    }
+
     return {
       success: true,
       user: {
-        id: 'TECH-2026-03',
-        name: 'Ramesh Patel',
-        username: 'technician',
+        id: techId,
+        name: techName,
+        username: cleanUser,
         role: 'Technician',
-        department: 'Electrical & HVAC Services',
-        email: 'ramesh.patel@fixora.edu',
+        roleTitle: techTitle,
+        department: techDept,
+        email: `${cleanUser.split('@')[0]}@apsit.edu.in`,
         avatar: '🔧',
       },
-      token: `tech_fb_${Date.now()}`,
+      token: `tech_${Date.now()}`,
     };
   }
 
-  // Any non-empty credentials can log in as a registered campus member
-  if (cleanUser && cleanPass) {
-    return {
-      success: true,
-      user: {
-        id: `USR-${Date.now().toString().slice(-4)}`,
-        name: username.trim(),
-        username: cleanUser,
-        role: 'Student',
-        department: 'Campus Resident',
-        email: `${cleanUser}@campus.edu`,
-        avatar: username.charAt(0).toUpperCase(),
-      },
-      token: `usr_fb_${Date.now()}`,
-    };
+  // Faculty (Prof. Rajesh Verma)
+  if (cleanUser === 'faculty' || cleanUser.includes('prof') || (cleanUser.includes('rajesh') && cleanPass === 'faculty@123')) {
+    if (cleanPass === 'faculty@123' || cleanPass === 'faculty' || cleanPass === 'rajesh@123') {
+      return {
+        success: true,
+        user: {
+          id: 'FAC-VERMA',
+          name: 'Prof. Rajesh Verma',
+          username: 'faculty',
+          role: 'Faculty',
+          department: 'Dept. of Computer Science & Engineering',
+          email: 'rajesh.verma@apsit.edu.in',
+          avatar: '👨‍🏫',
+        },
+        token: `fac_${Date.now()}`,
+      };
+    }
   }
 
-  throw new Error('Please enter a valid username and password.');
+  // Student (Numeric Moodle ID)
+  const beforeAt = cleanUser.includes('@') ? cleanUser.split('@')[0] : cleanUser;
+  const isNumeric = /^\d+$/.test(beforeAt);
+
+  if (isNumeric || cleanUser.startsWith('student') || cleanUser.endsWith('@apsit.edu.in')) {
+    const studentId = isNumeric ? beforeAt : '25206010';
+    const isStudentPass = cleanPass === 'student@123' || cleanPass === 'student' || cleanPass === studentId;
+    if (isStudentPass) {
+      return {
+        success: true,
+        user: {
+          id: studentId,
+          name: studentId === '25206010' ? 'Neev Rambhia' : 'Student Reporter',
+          username: cleanUser,
+          role: 'Student',
+          department: `Computer Engineering (ID ${studentId})`,
+          email: `${studentId}@apsit.edu.in`,
+          avatar: '🎓',
+        },
+        token: `stu_${Date.now()}`,
+      };
+    }
+  }
+
+  throw new Error('Incorrect credentials. Please verify your campus username and password.');
 }
 
 // Backward-compatible alias for existing imports

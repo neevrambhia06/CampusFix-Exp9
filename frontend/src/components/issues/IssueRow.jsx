@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Wrench } from 'lucide-react';
+import { formatReporterName } from '../../data/mockData';
 
 export function IssueRow(props) {
   const { issue, onStatusChange, onDelete } = props;
@@ -18,7 +19,11 @@ export function IssueRow(props) {
         >
           {issue.title}
         </span>
-        <span className="row-subtitle">{issue.reporter || issue.reportedBy} · {issue.reportedAt || 'Recent'}</span>
+        <span className="row-subtitle">
+          {formatReporterName(issue.reporter || issue.reportedBy)}
+          {issue.assignedTo && <span> · Assigned: <strong>{issue.assignedTo}</strong></span>}
+          <span> · {issue.reportedAt || 'Recent'}</span>
+        </span>
       </td>
       <td>
         <span className="row-category-pill">{issue.category}</span>

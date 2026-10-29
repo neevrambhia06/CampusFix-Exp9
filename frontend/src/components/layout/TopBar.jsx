@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { Search, Bell, CheckCircle2, AlertCircle, Info, ShieldCheck, Lock, LogOut, LogIn, User } from 'lucide-react';
+import { useCampusFix } from '../../context/CampusFixContext';
 
 export function TopBar(props) {
   const { user, isAdmin, onLogout, searchTerm, onSearchChange } = props;
   const location = useLocation();
   const navigate = useNavigate();
+  const { openAlertModal } = useCampusFix();
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -30,25 +32,68 @@ export function TopBar(props) {
   const notifications = [
     {
       id: 1,
-      title: "Issue Assigned",
-      text: "Your AC leakage report #1 was assigned to Technician Rajesh.",
+      title: "Work Order Assigned to Technician",
+      severity: "Notice",
+      category: "Plumbing & HVAC",
+      text: "Your AC leakage report #1 was assigned to Technician Ramesh Nair.",
+      description: "Technician Ramesh Nair has been dispatched to Academic Block B · 3rd Floor to inspect the AC unit condensation line and isolate circuit breakers.",
       time: "10m ago",
+      date: "Today · 10 mins ago",
+      sender: "Dr. Ananya Sen · Dean of Infrastructure & Campus Operations",
+      impactedLocations: [
+        "Academic Block B · 3rd Floor Lab 302",
+        "East Wing HVAC Distribution Trench"
+      ],
+      safetyChecklist: [
+        "Area cordoned off with high-visibility caution cones",
+        "Breaker sub-panel isolated to prevent electrical hazards",
+        "Drainage catchment trays positioned beneath pipeline"
+      ],
       icon: CheckCircle2,
       color: "#059669"
     },
     {
       id: 2,
-      title: "Maintenance Scheduled",
+      title: "Scheduled Power & Infrastructure Outage",
+      severity: "Important",
+      category: "Electrical",
       text: "Power outage planned for Block B on Friday 10 AM.",
+      description: "Routine transformer testing, breaker upgrades, and thermal imaging inspections across Engineering Block B and Central Auditorium. Scheduled outage from 10:00 AM to 1:00 PM.",
       time: "2h ago",
+      date: "Friday · 10:00 AM – 1:00 PM",
+      sender: "Dr. Ananya Sen · Dean of Infrastructure & Campus Operations",
+      impactedLocations: [
+        "Engineering Block B (Floors 1 - 4)",
+        "Central Auditorium Main Hall & Stage Dimmer Racks",
+        "North Substation Transformer Yard"
+      ],
+      safetyChecklist: [
+        "Verify backup battery on critical lab servers",
+        "Avoid elevator usage 10 minutes prior to scheduled power toggle window",
+        "Shut down sensitive oscilloscopes and spectrometers before 9:50 AM",
+        "Report any sparks, unusual buzzing, or emergency trips to Security Dispatch"
+      ],
       icon: AlertCircle,
       color: "#D97706"
     },
     {
       id: 3,
-      title: "Ticket Resolved",
+      title: "Work Order Resolved & Verified",
+      severity: "Notice",
+      category: "Facilities",
       text: "Gym Cable Cross Machine issue #6 was marked resolved.",
+      description: "Right pulley rubber handle was replaced with an industrial-grade ergonomic grip. Verified with 120kg tension pull test by Estate General Crew.",
       time: "Yesterday",
+      date: "Yesterday · 4:30 PM",
+      sender: "Estate General Crew · Operations Lead",
+      impactedLocations: [
+        "Sports Complex · Fitness Center Ground Floor"
+      ],
+      safetyChecklist: [
+        "High-tensile steel cable checked for fatigue micro-cracks",
+        "Locking carabiner replaced with industrial safety clip",
+        "Machine certified for student and staff athletic training"
+      ],
       icon: Info,
       color: "#2563EB"
     }
@@ -103,12 +148,26 @@ export function TopBar(props) {
                 {notifications.map((n) => {
                   const Icon = n.icon;
                   return (
-                    <div key={n.id} className="notification-item">
+                    <div 
+                      key={n.id} 
+                      className="notification-item"
+                      onClick={() => {
+                        openAlertModal(n);
+                        setShowNotifications(false);
+                      }}
+                      style={{ cursor: 'pointer', transition: 'background-color 0.15s ease' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      title="Click to view full advisory details"
+                    >
                       <Icon size={16} style={{ color: n.color, flexShrink: 0, marginTop: '2px' }} />
                       <div className="notification-content">
-                        <div className="notification-title">{n.title}</div>
+                        <div className="notification-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                          <span>{n.title}</span>
+                          <span style={{ fontSize: '0.65rem', color: n.color, fontWeight: 700, textTransform: 'uppercase' }}>{n.severity}</span>
+                        </div>
                         <div className="notification-text">{n.text}</div>
-                        <div className="notification-time">{n.time}</div>
+                        <div className="notification-time">{n.time} · Click for safety checklist</div>
                       </div>
                     </div>
                   );

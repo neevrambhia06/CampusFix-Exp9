@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import IssueTimeline from '../components/issues/IssueTimeline';
 import { LoadingState, ErrorState } from '../components/common/CommonComponents';
 import { useCampusFix } from '../context/CampusFixContext';
+import { mockIssues, isAssignedToUser, formatReporterName } from '../data/mockData';
 import { 
   ArrowLeft, 
   Trash2, 
@@ -15,7 +16,10 @@ import {
   CheckCircle2, 
   Clock,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Lock,
+  Wrench,
+  FileText
 } from 'lucide-react';
 
 export function IssueDetails() {
@@ -23,27 +27,27 @@ export function IssueDetails() {
   const navigate = useNavigate();
   const { fetchSingleIssue, patchIssue, deleteIssue, issues, currentUser, isAdmin } = useCampusFix();
 
-  // Instant lookup from context issues (0ms latency!)
+  // Instant lookup with multi-tier cache: context issues -> localStorage -> mock data (0ms instant load!)
   const localIssue = useMemo(() => {
-    return issues.find((i) => String(i.id) === String(id));
-  }, [issues, id]);
-
-  // Initial state: immediate fallback to localIssue or localStorage cache
-  const [issue, setIssue] = useState(() => {
-    if (localIssue) return localIssue;
+    if (issues && issues.length > 0) {
+      const match = issues.find((i) => String(i.id) === String(id));
+      if (match) return match;
+    }
     try {
       const cached = JSON.parse(localStorage.getItem('campusfix_cached_issues') || '[]');
-      const found = cached.find((i) => String(i.id) === String(id));
-      if (found) return found;
+      const foundInCache = cached.find((i) => String(i.id) === String(id));
+      if (foundInCache) return foundInCache;
     } catch {}
-    return null;
-  });
+    return mockIssues.find((i) => String(i.id) === String(id)) || null;
+  }, [issues, id]);
 
-  const [loading, setLoading] = useState(() => !localIssue && !issue);
+  // Initial state: immediate sync with localIssue (0ms latency, zero spinner freeze)
+  const [issue, setIssue] = useState(() => localIssue);
+  const [loading, setLoading] = useState(() => !localIssue);
   const [error, setError] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Sync with localIssue whenever issues array updates in context
+  // Sync whenever localIssue updates in context or cache
   useEffect(() => {
     if (localIssue) {
       setIssue(localIssue);
@@ -52,9 +56,9 @@ export function IssueDetails() {
     }
   }, [localIssue]);
 
-  // Only fetch from API if not already available locally
+  // Background fetch only if not already resolved locally
   useEffect(() => {
-    if (issue) {
+    if (issue || localIssue) {
       setLoading(false);
       return;
     }
@@ -63,36 +67,82 @@ export function IssueDetails() {
     setLoading(true);
     setError(null);
 
+    // 2-second failsafe timer so user never gets stuck on loading spinner
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        const fallback = mockIssues.find((i) => String(i.id) === String(id));
+        if (fallback) {
+          setIssue(fallback);
+          setLoading(false);
+        } else {
+          setError(`Issue #${id} could not be found.`);
+          setLoading(false);
+        }
+      }
+    }, 2000);
+
     fetchSingleIssue(id)
       .then((data) => {
+        clearTimeout(timer);
         if (isMounted) {
           if (data) {
             setIssue(data);
           } else {
-            setError(`Issue #${id} could not be found.`);
+            const fallback = mockIssues.find((i) => String(i.id) === String(id));
+            if (fallback) setIssue(fallback);
+            else setError(`Issue #${id} could not be found.`);
           }
           setLoading(false);
         }
       })
       .catch((err) => {
+        clearTimeout(timer);
         if (isMounted) {
-          setError(`Issue #${id} fetch failed: ${err.message}`);
-          setLoading(false);
+          const fallback = mockIssues.find((i) => String(i.id) === String(id));
+          if (fallback) {
+            setIssue(fallback);
+            setLoading(false);
+          } else {
+            setError(`Issue #${id} fetch failed: ${err.message}`);
+            setLoading(false);
+          }
         }
       });
 
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
-  }, [id, fetchSingleIssue]);
+  }, [id, localIssue]);
+
+  const isAssigned = isAssignedToUser(issue?.assignedTo, currentUser);
+  const canModify = currentUser?.role === 'Admin' || (currentUser?.role === 'Technician' && isAssigned);
 
   const handleUpdateStatus = async (newStatus) => {
-    if (!issue || isUpdating) return;
+    if (!issue || isUpdating || !canModify) return;
     setIsUpdating(true);
+
+    let resolutionNotes = issue.resolutionNotes || '';
+    if (newStatus === 'Resolved' && currentUser?.role === 'Technician') {
+      const tag = `(Logged by ${currentUser.name})`;
+      if (!resolutionNotes.includes(tag)) {
+        resolutionNotes = resolutionNotes ? `${resolutionNotes} ${tag}` : `Work completed and verified on site ${tag}`;
+      }
+    }
+
     // Instant optimistic update
-    setIssue((prev) => ({ ...prev, status: newStatus, updatedAt: 'Just now' }));
+    setIssue((prev) => ({ 
+      ...prev, 
+      status: newStatus, 
+      resolutionNotes: resolutionNotes || prev.resolutionNotes,
+      updatedAt: 'Just now' 
+    }));
+
     try {
-      await patchIssue(issue.id, { status: newStatus });
+      await patchIssue(issue.id, { 
+        status: newStatus,
+        ...(resolutionNotes ? { resolutionNotes } : {})
+      });
     } catch (err) {
       console.warn('Status patch deferred:', err);
     } finally {
@@ -349,7 +399,7 @@ export function IssueDetails() {
               </div>
             </div>
 
-            {/* Reporter */}
+            {/* Reporter (Clean format without IDs) */}
             <div 
               style={{ 
                 backgroundColor: '#FFFFFF', 
@@ -364,7 +414,26 @@ export function IssueDetails() {
                 <span>Reported By</span>
               </div>
               <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0F172A' }}>
-                {issue.reporter || issue.reportedBy || 'Campus Resident'}
+                {formatReporterName(issue.reporter || issue.reportedBy)}
+              </div>
+            </div>
+
+            {/* Assigned Technician */}
+            <div 
+              style={{ 
+                backgroundColor: '#FFFFFF', 
+                border: '1px solid #E2E8F0', 
+                borderRadius: '12px', 
+                padding: '1rem',
+                boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>
+                <Wrench size={13} style={{ color: '#004643' }} />
+                <span>Assigned To</span>
+              </div>
+              <div style={{ fontSize: '0.875rem', fontWeight: 700, color: issue.assignedTo ? '#004643' : '#64748B' }}>
+                {issue.assignedTo || 'Unassigned (Triage)'}
               </div>
             </div>
 
@@ -444,89 +513,145 @@ export function IssueDetails() {
               Update ticket lifecycle state and notify assigned technicians.
             </p>
 
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label 
-                style={{ 
-                  display: 'block', 
-                  fontSize: '0.775rem', 
-                  fontWeight: 700, 
-                  color: '#334155', 
-                  textTransform: 'uppercase', 
-                  letterSpacing: '0.03em', 
-                  marginBottom: '6px' 
-                }}
-              >
-                Change Status
-              </label>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {[
-                  { value: 'Reported', label: 'Reported (Queued for Triage)', color: '#E11D48', bg: '#FFF1F2' },
-                  { value: 'In Progress', label: 'In Progress (Active Repair)', color: '#D97706', bg: '#FEF3C7' },
-                  { value: 'Resolved', label: 'Resolved (Fixed & Verified)', color: '#059669', bg: '#ECFDF5' }
-                ].map((st) => (
-                  <button
-                    key={st.value}
-                    type="button"
-                    disabled={isUpdating}
-                    onClick={() => handleUpdateStatus(st.value)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      fontSize: '0.825rem',
-                      fontWeight: issue.status === st.value ? 700 : 500,
-                      cursor: isUpdating ? 'wait' : 'pointer',
-                      border: issue.status === st.value ? `2px solid ${st.color}` : '1px solid #E2E8F0',
-                      backgroundColor: issue.status === st.value ? st.bg : '#FFFFFF',
-                      color: issue.status === st.value ? st.color : '#334155',
-                      transition: 'all 0.15s ease',
-                      textAlign: 'left'
-                    }}
-                  >
-                    <span>{st.label}</span>
-                    {issue.status === st.value && (
-                      <CheckCircle2 size={16} style={{ color: st.color }} />
-                    )}
-                  </button>
-                ))}
+            {/* Resolution Notes Banner if present */}
+            {issue.resolutionNotes && (
+              <div style={{
+                padding: '0.875rem 1rem',
+                backgroundColor: '#ECFDF5',
+                border: '1px solid #A7F3D0',
+                borderRadius: '12px',
+                marginBottom: '1rem',
+                fontSize: '0.8rem',
+                color: '#065F46'
+              }}>
+                <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                  <CheckCircle2 size={15} style={{ color: '#059669' }} />
+                  <span>Resolution Notes</span>
+                </div>
+                <div>{issue.resolutionNotes}</div>
               </div>
-            </div>
+            )}
+
+            {/* Strict Access Control: If technician is not assigned, render restriction card */}
+            {currentUser?.role === 'Technician' && !isAssigned ? (
+              <div style={{
+                padding: '1.25rem',
+                borderRadius: '12px',
+                border: '1px solid #E2E8F0',
+                backgroundColor: '#F8FAFC',
+                color: '#334155',
+                marginBottom: '1rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '0.875rem', color: '#0F172A', marginBottom: '6px' }}>
+                  <Lock size={16} style={{ color: '#E11D48' }} />
+                  <span>Technician Access Restricted</span>
+                </div>
+                <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0, lineHeight: 1.5 }}>
+                  {issue.assignedTo 
+                    ? `This work order is assigned to "${issue.assignedTo}". Only the assigned technician or campus administrator has permission to modify or resolve this ticket.`
+                    : 'This work order is currently unassigned. An administrator must dispatch this ticket to your queue before you can take action.'}
+                </p>
+              </div>
+            ) : canModify ? (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label 
+                  style={{ 
+                    display: 'block', 
+                    fontSize: '0.775rem', 
+                    fontWeight: 700, 
+                    color: '#334155', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.03em', 
+                    marginBottom: '6px' 
+                  }}
+                >
+                  Change Status
+                </label>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {[
+                    { value: 'Reported', label: 'Reported (Queued for Triage)', color: '#E11D48', bg: '#FFF1F2' },
+                    { value: 'In Progress', label: 'In Progress (Active Repair)', color: '#D97706', bg: '#FEF3C7' },
+                    { value: 'Resolved', label: 'Resolved (Fixed & Verified)', color: '#059669', bg: '#ECFDF5' }
+                  ].map((st) => (
+                    <button
+                      key={st.value}
+                      type="button"
+                      disabled={isUpdating}
+                      onClick={() => handleUpdateStatus(st.value)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        fontSize: '0.825rem',
+                        fontWeight: issue.status === st.value ? 700 : 500,
+                        cursor: isUpdating ? 'wait' : 'pointer',
+                        border: issue.status === st.value ? `2px solid ${st.color}` : '1px solid #E2E8F0',
+                        backgroundColor: issue.status === st.value ? st.bg : '#FFFFFF',
+                        color: issue.status === st.value ? st.color : '#334155',
+                        transition: 'all 0.15s ease',
+                        textAlign: 'left'
+                      }}
+                    >
+                      <span>{st.label}</span>
+                      {issue.status === st.value && (
+                        <CheckCircle2 size={16} style={{ color: st.color }} />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                padding: '1rem',
+                backgroundColor: '#F8FAFC',
+                borderRadius: '10px',
+                border: '1px solid #E2E8F0',
+                fontSize: '0.8rem',
+                color: '#64748B',
+                fontStyle: 'italic',
+                marginBottom: '1rem'
+              }}>
+                Ticket lifecycle updates are managed by assigned technicians and campus operations personnel.
+              </div>
+            )}
 
             <div style={{ height: '1px', backgroundColor: '#E2E8F0', margin: '1.25rem 0' }} />
 
             {/* Delete Action */}
-            <button
-              type="button"
-              onClick={handleDelete}
-              style={{
-                width: '100%',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                padding: '10px',
-                borderRadius: '10px',
-                fontSize: '0.825rem',
-                fontWeight: 700,
-                color: '#BE123C',
-                backgroundColor: '#FFF1F2',
-                border: '1px solid #FECDD3',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#FEE2E2';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#FFF1F2';
-              }}
-            >
-              <Trash2 size={15} />
-              <span>Delete Ticket Record</span>
-            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                style={{
+                  width: '100%',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '10px',
+                  borderRadius: '10px',
+                  fontSize: '0.825rem',
+                  fontWeight: 700,
+                  color: '#BE123C',
+                  backgroundColor: '#FFF1F2',
+                  border: '1px solid #FECDD3',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#FEE2E2';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#FFF1F2';
+                }}
+              >
+                <Trash2 size={15} />
+                <span>Delete Ticket Record</span>
+              </button>
+            )}
           </div>
 
         </div>

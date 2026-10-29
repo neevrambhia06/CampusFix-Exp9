@@ -48,46 +48,84 @@ const DEPARTMENTS = [
   'Campus Facilities & Operations'
 ];
 
-// Preset testing roles for professors/evaluators
+// Automatic Role Detection Personas (Exp 10 Aligned)
 const EVALUATION_ROLES = [
+  {
+    id: 'student',
+    name: 'Student',
+    persona: 'Neev Rambhia',
+    username: '25206010',
+    password: 'student@123',
+    destination: '/dashboard',
+    color: '#0284C7',
+    bg: '#F0F9FF',
+    border: '#BAE6FD',
+  },
   {
     id: 'admin',
     name: 'Administrator',
-    icon: ShieldCheck,
-    badge: 'SUPER ADMIN',
+    persona: 'Dr. Ananya Sen (Dean)',
+    username: 'admin',
+    password: 'admin@123',
+    destination: '/admin',
     color: '#004643',
     bg: '#E6F2F1',
     border: '#B2D8D5',
-    username: 'admin',
-    password: 'admin',
-    destination: '/admin',
-    note: 'Access Admin Dashboard & resolve/delete tickets'
   },
   {
-    id: 'faculty',
-    name: 'Faculty Staff',
-    icon: Briefcase,
-    badge: 'FACULTY',
-    color: '#7C3AED',
-    bg: '#F5F3FF',
-    border: '#DDD6FE',
-    username: 'faculty',
-    password: 'faculty',
-    destination: '/dashboard',
-    note: 'Submit high-priority lab/lecture hall tickets'
-  },
-  {
-    id: 'technician',
-    name: 'Technician Crew',
-    icon: Wrench,
-    badge: 'ENGINEERING CREW',
+    id: 'tech-suresh',
+    name: 'Lead Technician',
+    persona: 'Suresh Kumar (Electrical)',
+    username: 'suresh',
+    password: 'tech@123',
+    destination: '/issues',
     color: '#D97706',
     bg: '#FFFBEB',
     border: '#FDE68A',
-    username: 'technician',
-    password: 'tech',
+  },
+  {
+    id: 'tech-vikram',
+    name: 'IT / AV Lead',
+    persona: 'Vikram Rao (Network & AV)',
+    username: 'vikram',
+    password: 'tech@123',
     destination: '/issues',
-    note: 'Inspect live work orders and update repair status'
+    color: '#2563EB',
+    bg: '#EFF6FF',
+    border: '#BFDBFE',
+  },
+  {
+    id: 'tech-ramesh',
+    name: 'Plumbing Specialist',
+    persona: 'Ramesh Nair (Plumbing)',
+    username: 'ramesh',
+    password: 'tech@123',
+    destination: '/issues',
+    color: '#059669',
+    bg: '#ECFDF5',
+    border: '#A7F3D0',
+  },
+  {
+    id: 'tech-estate',
+    name: 'Estate Operations',
+    persona: 'Estate General Crew',
+    username: 'estate',
+    password: 'tech@123',
+    destination: '/issues',
+    color: '#475569',
+    bg: '#F1F5F9',
+    border: '#CBD5E1',
+  },
+  {
+    id: 'faculty',
+    name: 'Senior Faculty',
+    persona: 'Prof. Rajesh Verma',
+    username: 'faculty',
+    password: 'faculty@123',
+    destination: '/dashboard',
+    color: '#7C3AED',
+    bg: '#F5F3FF',
+    border: '#DDD6FE',
   }
 ];
 
@@ -982,7 +1020,7 @@ export function AdminLogin() {
                       required
                       value={signInId}
                       onChange={(e) => setSignInId(e.target.value)}
-                      placeholder="e.g. rollno@campus.edu or 2024CS0042"
+                      placeholder="e.g. 25206010, admin, suresh, vikram, or faculty"
                       style={{
                         width: '100%',
                         height: '42px',
@@ -1492,7 +1530,7 @@ export function AdminLogin() {
                   Use these preset credentials for professor evaluation or grading:
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '6px' }}>
                   {EVALUATION_ROLES.map((role) => (
                     <button
                       key={role.id}
@@ -1518,8 +1556,11 @@ export function AdminLogin() {
                       <div style={{ fontSize: '0.75rem', fontWeight: 700, color: role.color }}>
                         {role.name}
                       </div>
-                      <div style={{ fontSize: '0.675rem', color: '#94A3B8', marginTop: '2px' }}>
-                        <code>{role.username}</code>
+                      <div style={{ fontSize: '0.675rem', color: '#334155', fontWeight: 600, marginTop: '1px' }}>
+                        {role.persona}
+                      </div>
+                      <div style={{ fontSize: '0.65rem', color: '#94A3B8', marginTop: '1px' }}>
+                        <code>{role.username}</code> · <code>{role.password}</code>
                       </div>
                     </button>
                   ))}
