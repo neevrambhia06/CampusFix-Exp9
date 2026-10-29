@@ -150,6 +150,34 @@ export function IssueDetails() {
     }
   };
 
+  // Handle direct technician assignment by Admin
+  const handleAssignTechnician = async (newTechnician) => {
+    if (!issue || isUpdating || !isAdmin) return;
+    setIsUpdating(true);
+
+    const shouldMoveToProgress = issue.status === 'Reported' && newTechnician;
+    const newStatus = shouldMoveToProgress ? 'In Progress' : issue.status;
+
+    setIssue((prev) => ({
+      ...prev,
+      assignedTo: newTechnician || null,
+      status: newStatus,
+      updatedAt: 'Just now by Admin'
+    }));
+
+    try {
+      await patchIssue(issue.id, {
+        assignedTo: newTechnician || null,
+        ...(shouldMoveToProgress ? { status: 'In Progress' } : {}),
+        updatedAt: 'Just now by Admin'
+      });
+    } catch (err) {
+      console.warn('Technician assignment deferred:', err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (window.confirm(`Are you sure you want to permanently delete Issue #${id}?`)) {
       await deleteIssue(id);
@@ -554,6 +582,64 @@ export function IssueDetails() {
               </div>
             ) : canModify ? (
               <div style={{ marginBottom: '1.25rem' }}>
+                {/* Administrator Technician Dispatch Selector */}
+                {isAdmin && (
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <label 
+                      style={{ 
+                        display: 'block', 
+                        fontSize: '0.775rem', 
+                        fontWeight: 700, 
+                        color: '#334155', 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.03em', 
+                        marginBottom: '6px' 
+                      }}
+                    >
+                      Assign / Dispatch Technician
+                    </label>
+
+                    <div style={{ position: 'relative' }}>
+                      <select
+                        value={issue.assignedTo || ''}
+                        disabled={isUpdating}
+                        onChange={(e) => handleAssignTechnician(e.target.value)}
+                        style={{
+                          width: '100%',
+                          height: '40px',
+                          paddingLeft: '32px',
+                          paddingRight: '28px',
+                          fontSize: '0.85rem',
+                          fontWeight: issue.assignedTo ? 700 : 500,
+                          borderRadius: '10px',
+                          border: issue.assignedTo ? '1px solid #B2D8D5' : '1px solid #CBD5E1',
+                          backgroundColor: issue.assignedTo ? '#E6F2F1' : '#FFFFFF',
+                          color: issue.assignedTo ? '#004643' : '#64748B',
+                          outline: 'none',
+                          cursor: isUpdating ? 'wait' : 'pointer',
+                          appearance: 'none',
+                          WebkitAppearance: 'none'
+                        }}
+                      >
+                        <option value="">⚠️ Unassigned (Awaiting Triage)</option>
+                        <option value="Suresh Kumar">⚡ Suresh Kumar — Lead Electrical & Facilities</option>
+                        <option value="Vikram Rao">💻 Vikram Rao — IT & Audio-Visual Systems</option>
+                        <option value="Ramesh Nair">🚰 Ramesh Nair — Plumbing Specialist</option>
+                        <option value="Rajesh Sharma">❄️ Rajesh Sharma — HVAC & Cooling Support</option>
+                        <option value="Estate General Crew">🛠️ Estate General Crew — Operations</option>
+                      </select>
+                      <Wrench size={15} style={{ position: 'absolute', left: '10px', top: '13px', color: issue.assignedTo ? '#004643' : '#94A3B8', pointerEvents: 'none' }} />
+                      <ChevronDown size={15} style={{ position: 'absolute', right: '10px', top: '13px', color: '#94A3B8', pointerEvents: 'none' }} />
+                    </div>
+
+                    {issue.assignedTo && (
+                      <div style={{ fontSize: '0.75rem', color: '#004643', marginTop: '5px', fontWeight: 600 }}>
+                        ✓ Dispatched to {issue.assignedTo}'s active queue
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <label 
                   style={{ 
                     display: 'block', 

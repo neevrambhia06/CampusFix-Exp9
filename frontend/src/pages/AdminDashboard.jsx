@@ -659,7 +659,7 @@ export function AdminDashboard() {
             <tbody>
               {filteredIssues.length === 0 ? (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '3.5rem 1rem', color: '#64748B' }}>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '3.5rem 1rem', color: '#64748B' }}>
                     <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>No tickets found</div>
                     <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>Try adjusting your search query or filters.</div>
                   </td>
