@@ -1,8 +1,60 @@
-import React from 'react';
+import React, { Component } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import AppShell from './components/layout/AppShell';
 import { CampusFixProvider, useCampusFix } from './context/CampusFixContext';
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Fixora Error Boundary Caught:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+          <div style={{ maxWidth: '480px', width: '100%', background: '#FFFFFF', border: '1px solid #FECDD3', borderRadius: '16px', padding: '2rem', boxShadow: '0 8px 24px rgba(15,23,42,0.06)' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#FFF1F2', color: '#E11D48', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem', fontSize: '1.4rem' }}>
+              ⚠️
+            </div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.5rem' }}>
+              Something went wrong loading this ticket
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+              {this.state.error?.message || 'An unexpected rendering error occurred while displaying this view.'}
+            </p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="btn btn-secondary btn-sm"
+              >
+                Reload View
+              </button>
+              <a
+                href="/issues"
+                className="btn btn-primary btn-sm"
+                style={{ textDecoration: 'none' }}
+              >
+                Back to All Issues
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -82,7 +134,9 @@ export function App() {
   return (
     <CampusFixProvider>
       <Router>
-        <AppLayout />
+        <ErrorBoundary>
+          <AppLayout />
+        </ErrorBoundary>
       </Router>
     </CampusFixProvider>
   );
